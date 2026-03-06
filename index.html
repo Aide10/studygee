@@ -6,275 +6,849 @@
 <meta name="description" content="StudyGee - Your JAMB Plug. Study smarter, pass UTME.">
 <meta name="theme-color" content="#0a1628">
 <title>StudyGee — Your JAMB Plug</title>
-<link rel="manifest" href="#" />
+<link rel="manifest" href="manifest.json" />
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+  import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyB9gAdr3oFyxu7K_zYhCcGrsxuZY2Pt9Bs",
+    authDomain: "studygee-28943.firebaseapp.com",
+    projectId: "studygee-28943",
+    storageBucket: "studygee-28943.firebasestorage.app",
+    messagingSenderId: "253358407287",
+    appId: "1:253358407287:web:372ea73e4363d695065072"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  // ============================
+  // DATA
+  // ============================
+  const QUESTIONS = {
+    English: [
+      { q:"Choose the word closest in meaning to 'Eloquent'", opts:["Fluent","Silent","Confused","Angry"], ans:0, exp:"Eloquent means having or exercising the power of fluent, forceful, and appropriate speech." },
+      { q:"Identify the figure of speech: 'The pen is mightier than the sword'", opts:["Simile","Metaphor","Personification","Hyperbole"], ans:1, exp:"This is a metaphor — it compares two things without using 'like' or 'as'." },
+      { q:"Which of these sentences is grammatically correct?", opts:["She don't like him","He doesn't likes it","They don't agree","We doesn't know"], ans:2, exp:"'They don't agree' is correct. 'Don't' is used with plural subjects." },
+      { q:"Choose the antonym of 'Verbose'", opts:["Wordy","Concise","Talkative","Fluent"], ans:1, exp:"Verbose means using more words than needed. Concise is the opposite — brief and to the point." },
+      { q:"In comprehension, a 'topic sentence' is:", opts:["The last sentence","The main idea of a paragraph","A question","A conclusion"], ans:1, exp:"A topic sentence states the main idea of a paragraph, usually appearing at the beginning." },
+      { q:"Choose the correct plural of 'criterion'", opts:["Criterions","Criterias","Criteria","Criterion"], ans:2, exp:"'Criteria' is the correct plural of 'criterion' — it is a Latin-origin word." },
+      { q:"Which punctuation ends an exclamatory sentence?", opts:[".","?","!",","], ans:2, exp:"An exclamatory sentence expresses strong emotion and ends with an exclamation mark (!)." },
+      { q:"'He gave me a fat cheque' — fat is used as:", opts:["Noun","Adverb","Adjective","Verb"], ans:2, exp:"'Fat' here describes the noun 'cheque', so it is an adjective." },
+      { q:"Choose the word that is misspelled:", opts:["Necessary","Accomodate","Beautiful","Occasion"], ans:1, exp:"The correct spelling is 'Accommodate' with double 'c' and double 'm'." },
+      { q:"A word that sounds like another but has different meaning is called:", opts:["Synonym","Antonym","Homophone","Metaphor"], ans:2, exp:"Homophones are words that sound the same but have different meanings, e.g. 'hear' and 'here'." },
+    ],
+    Biology: [
+      { q:"The powerhouse of the cell is the:", opts:["Nucleus","Mitochondria","Ribosome","Cell membrane"], ans:1, exp:"Mitochondria produce ATP (energy) through cellular respiration, earning the nickname 'powerhouse of the cell'." },
+      { q:"Which blood group is the universal donor?", opts:["A","B","AB","O"], ans:3, exp:"Blood group O negative is the universal donor because it lacks A, B, and Rh antigens." },
+      { q:"Photosynthesis takes place in the:", opts:["Mitochondria","Ribosome","Chloroplast","Vacuole"], ans:2, exp:"Chloroplasts contain chlorophyll and are where photosynthesis converts sunlight into glucose." },
+      { q:"DNA stands for:", opts:["Deoxyribonucleic Acid","Di-nitrogen Acid","Double Nitric Acid","None"], ans:0, exp:"DNA (Deoxyribonucleic Acid) is the molecule carrying genetic information in living organisms." },
+      { q:"The process by which plants lose water through leaves is:", opts:["Respiration","Transpiration","Osmosis","Diffusion"], ans:1, exp:"Transpiration is the evaporation of water from plant surfaces, mainly through stomata in leaves." },
+      { q:"Which organ produces insulin?", opts:["Liver","Kidney","Pancreas","Stomach"], ans:2, exp:"The pancreas produces insulin, which regulates blood glucose levels." },
+      { q:"Osmosis is the movement of water from:", opts:["High to low concentration","Low to high solute concentration","High solute to low solute","None"], ans:1, exp:"Osmosis is movement of water from low solute concentration to high solute concentration across a semi-permeable membrane." },
+      { q:"The basic unit of heredity is:", opts:["Cell","Gene","Chromosome","Nucleus"], ans:1, exp:"Genes are segments of DNA that carry hereditary information and are the basic unit of inheritance." },
+      { q:"Which part of the brain controls balance?", opts:["Cerebrum","Medulla","Cerebellum","Thalamus"], ans:2, exp:"The cerebellum coordinates movement, balance, and fine motor control." },
+      { q:"Anaerobic respiration produces:", opts:["CO2 and water","Lactic acid or ethanol","Only oxygen","Glucose"], ans:1, exp:"Without oxygen, cells produce lactic acid (in animals) or ethanol and CO2 (in yeast) through anaerobic respiration." },
+    ],
+    Chemistry: [
+      { q:"The atomic number of Carbon is:", opts:["6","12","8","14"], ans:0, exp:"Carbon has atomic number 6, meaning it has 6 protons in its nucleus." },
+      { q:"What is the chemical formula for water?", opts:["H2O2","HO","H2O","H3O"], ans:2, exp:"Water consists of 2 hydrogen atoms and 1 oxygen atom, giving the formula H2O." },
+      { q:"Which gas is produced when acid reacts with a metal?", opts:["Oxygen","Hydrogen","Carbon dioxide","Nitrogen"], ans:1, exp:"When metals react with acids, hydrogen gas is released. For example: Zn + H2SO4 → ZnSO4 + H2." },
+      { q:"The pH of a neutral solution is:", opts:["0","7","14","5"], ans:1, exp:"pH 7 is neutral. Below 7 is acidic, above 7 is alkaline/basic." },
+      { q:"Ionic bonds form between:", opts:["Two metals","Two non-metals","Metal and non-metal","Non-metal and gas"], ans:2, exp:"Ionic bonds form when a metal transfers electrons to a non-metal, creating oppositely charged ions." },
+      { q:"Which element is a noble gas?", opts:["Nitrogen","Chlorine","Argon","Oxygen"], ans:2, exp:"Argon is a noble gas (Group 18) — it has a full outer electron shell and is very unreactive." },
+      { q:"The process of a liquid turning to gas is called:", opts:["Condensation","Sublimation","Evaporation","Melting"], ans:2, exp:"Evaporation is the process by which a liquid converts to gas at temperatures below its boiling point." },
+      { q:"NaCl is the chemical formula for:", opts:["Sugar","Salt","Baking soda","Bleach"], ans:1, exp:"NaCl (Sodium Chloride) is common table salt, formed from Na+ and Cl- ions." },
+      { q:"Avogadro's number is approximately:", opts:["6.02 × 10²³","3.14 × 10²³","9.8 × 10²³","1.6 × 10¹⁹"], ans:0, exp:"Avogadro's number (6.02 × 10²³) is the number of atoms/molecules in one mole of a substance." },
+      { q:"Which type of reaction releases heat?", opts:["Endothermic","Exothermic","Electrolytic","Catalytic"], ans:1, exp:"Exothermic reactions release energy (heat) to the surroundings. Examples include combustion and neutralisation." },
+    ],
+    Physics: [
+      { q:"The SI unit of force is:", opts:["Joule","Watt","Newton","Pascal"], ans:2, exp:"The Newton (N) is the SI unit of force, defined as the force needed to accelerate 1 kg by 1 m/s²." },
+      { q:"Speed of light in vacuum is approximately:", opts:["3×10⁶ m/s","3×10⁸ m/s","3×10¹⁰ m/s","3×10⁴ m/s"], ans:1, exp:"The speed of light in vacuum is approximately 3×10⁸ m/s (300,000 km/s)." },
+      { q:"Which law states 'For every action there is an equal and opposite reaction'?", opts:["Newton's 1st Law","Newton's 2nd Law","Newton's 3rd Law","Ohm's Law"], ans:2, exp:"Newton's Third Law of Motion states that forces always come in equal and opposite pairs." },
+      { q:"The unit of electrical resistance is:", opts:["Ampere","Volt","Ohm","Watt"], ans:2, exp:"Resistance is measured in Ohms (Ω), named after Georg Simon Ohm." },
+      { q:"Which type of wave does not require a medium?", opts:["Sound","Water","Electromagnetic","Seismic"], ans:2, exp:"Electromagnetic waves (light, radio, X-rays) can travel through a vacuum — they don't need a medium." },
+      { q:"The formula for kinetic energy is:", opts:["mgh","½mv²","mv","Fd"], ans:1, exp:"Kinetic Energy = ½mv², where m is mass in kg and v is velocity in m/s." },
+      { q:"What happens to resistance when temperature increases?", opts:["Decreases","Stays same","Increases","Becomes zero"], ans:2, exp:"In most conductors, resistance increases with temperature as more electrons collide with vibrating ions." },
+      { q:"Pressure is defined as:", opts:["Force × Area","Force / Area","Mass × Gravity","Energy / Time"], ans:1, exp:"Pressure = Force ÷ Area. Its SI unit is Pascal (Pa), equivalent to N/m²." },
+      { q:"Which phenomenon explains the bending of light?", opts:["Reflection","Refraction","Diffraction","Dispersion"], ans:1, exp:"Refraction is the bending of light when it passes from one medium to another of different density." },
+      { q:"The acceleration due to gravity on Earth is approximately:", opts:["10 m/s²","9.8 m/s²","8.9 m/s²","12 m/s²"], ans:1, exp:"Standard gravitational acceleration on Earth's surface is 9.8 m/s² (often approximated as 10 m/s²)." },
+    ]
+  };
+
+  const NOTES = {
+    English: [
+      { title:"Parts of Speech", body:"There are 8 parts of speech: Noun (person/place/thing), Pronoun (replaces noun), Verb (action/being), Adjective (describes noun), Adverb (modifies verb/adjective), Preposition (shows relationship), Conjunction (joins clauses), Interjection (expresses emotion)." },
+      { title:"Figures of Speech", body:"Common figures in UTME: Simile (comparison using like/as), Metaphor (direct comparison), Personification (giving human traits to non-human things), Hyperbole (extreme exaggeration), Alliteration (repetition of consonant sounds), Onomatopoeia (word imitates sound), Irony (saying opposite of meaning)." },
+      { title:"Tenses", body:"Present Simple: I study. Present Continuous: I am studying. Past Simple: I studied. Future Simple: I will study. Present Perfect: I have studied. Past Perfect: I had studied. UTME commonly tests the difference between Present Perfect and Simple Past." },
+      { title:"Comprehension Tips", body:"For UTME comprehension: (1) Read questions FIRST before the passage. (2) Identify the main idea of each paragraph. (3) Look for contextual clues for unfamiliar words. (4) Never choose answers not supported by the text." },
+    ],
+    Biology: [
+      { title:"Cell Biology", body:"All living things are made of cells. Animal cells have: cell membrane, nucleus, cytoplasm, mitochondria, ribosomes. Plant cells additionally have: cell wall (cellulose), chloroplasts, large central vacuole. Prokaryotic cells (bacteria) have no nucleus." },
+      { title:"Genetics & Heredity", body:"DNA carries genetic information in sequences called genes. Humans have 46 chromosomes (23 pairs). Dominant alleles (uppercase) mask recessive alleles (lowercase). Gregor Mendel is the father of genetics. Key ratios: 3:1 (monohybrid), 9:3:3:1 (dihybrid)." },
+      { title:"Photosynthesis", body:"Equation: 6CO₂ + 6H₂O + light energy → C₆H₁₂O₆ + 6O₂. Occurs in chloroplasts. Two stages: Light reactions (in thylakoid) and Calvin Cycle (in stroma). Factors affecting rate: light intensity, CO₂ concentration, temperature, water availability." },
+      { title:"Human Systems", body:"Digestive: Mouth → Oesophagus → Stomach → Small intestine → Large intestine. Circulatory: Heart pumps blood. Respiratory: O₂ in, CO₂ out via lungs. Nervous: Brain + spinal cord (CNS), nerves (PNS). Excretory: Kidneys filter blood, produce urine." },
+    ],
+    Chemistry: [
+      { title:"Atomic Structure", body:"Atoms have: protons (+, in nucleus), neutrons (0, in nucleus), electrons (-, orbit nucleus). Atomic number = number of protons. Mass number = protons + neutrons. Isotopes: same atomic number, different mass numbers." },
+      { title:"Periodic Table", body:"Elements arranged by increasing atomic number. Groups (vertical) have same number of outer electrons. Periods (horizontal) show number of electron shells. Group 1 = Alkali metals. Group 7 = Halogens. Group 8/0 = Noble gases (unreactive)." },
+      { title:"Chemical Bonding", body:"Ionic bond: metal gives electrons to non-metal. High melting points. Conducts when dissolved. Covalent bond: non-metals share electrons. Can be single, double, or triple bonds. Metallic bond: metal atoms share sea of electrons — explains conductivity." },
+      { title:"Acids, Bases & Salts", body:"Acids: pH < 7, turn blue litmus red. Common acids: HCl, H₂SO₄, HNO₃. Bases: pH > 7, turn red litmus blue. Neutralisation: Acid + Base → Salt + Water. Indicators: Litmus, Phenolphthalein, Methyl orange." },
+    ],
+    Physics: [
+      { title:"Newton's Laws of Motion", body:"1st Law (Inertia): A body stays at rest or uniform motion unless acted upon by a force. 2nd Law: F = ma. 3rd Law: Every action has equal and opposite reaction. Weight = mg, momentum = mv, impulse = Ft." },
+      { title:"Electricity & Circuits", body:"Ohm's Law: V = IR. Series circuit: same current, voltages add. Parallel circuit: same voltage, currents add. Power: P = IV = I²R. Resistors in series: R_total = R₁+R₂. In parallel: 1/R_total = 1/R₁ + 1/R₂." },
+      { title:"Waves & Light", body:"Transverse waves: vibration perpendicular to motion (light). Longitudinal waves: vibration parallel (sound). Key terms: Wavelength (λ), Frequency (f), Speed (v = fλ). Light: Reflection (angle in = angle out), Refraction (bending due to speed change)." },
+      { title:"Energy & Work", body:"Work = Force × Distance (Joules). Kinetic Energy = ½mv². Potential Energy = mgh. Conservation of Energy: Energy cannot be created or destroyed. Power = Work ÷ Time (Watts). Efficiency = (useful output ÷ total input) × 100%." },
+    ]
+  };
+
+  const QUOTES = [
+    { q:"Success is not final, failure is not fatal — it is the courage to continue that counts.", a:"Winston Churchill" },
+    { q:"Education is the most powerful weapon which you can use to change the world.", a:"Nelson Mandela" },
+    { q:"The secret of getting ahead is getting started.", a:"Mark Twain" },
+    { q:"Don't watch the clock; do what it does — keep going.", a:"Sam Levenson" },
+    { q:"Believe you can and you're halfway there.", a:"Theodore Roosevelt" },
+    { q:"Hard work beats talent when talent doesn't work hard.", a:"Tim Notke" },
+    { q:"The future belongs to those who believe in the beauty of their dreams.", a:"Eleanor Roosevelt" },
+    { q:"You are braver than you believe, stronger than you seem.", a:"A.A. Milne" },
+  ];
+
+  // ============================
+  // STATE
+  // ============================
+  let currentUser = null;
+  let userData = null;
+  let currentQuiz = { subject:'', questions:[], index:0, score:0, mode:'practice', timer:null, timeLeft:30, isMock:false };
+  let bookmarks = JSON.parse(localStorage.getItem('sg_bookmarks') || '[]');
+  let isDark = true;
+  let selectedSubject = '';
+
+  // ============================
+  // AUTH STATE LISTENER
+  // ============================
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      currentUser = user;
+      await loadUserData();
+      showApp();
+    } else {
+      currentUser = null;
+      userData = null;
+      showScreen('auth');
+    }
+  });
+
+  // ============================
+  // SCREENS
+  // ============================
+  window.showScreen = function(id) {
+    document.querySelectorAll('.screen, #quiz-active, #quiz-result').forEach(s => {
+      s.classList.remove('active','show');
+    });
+    const el = document.getElementById(id);
+    if (el.classList.contains('screen')) el.classList.add('active');
+    else el.classList.add('show');
+  }
+
+  function showApp() {
+    showScreen('app');
+    updateGreeting();
+    loadDailyQuote();
+    updateStats();
+    showNotes('English', document.querySelector('.notes-tab'));
+    loadLeaderboard();
+    loadBookmarks();
+    loadProfile();
+  }
+
+  // ============================
+  // AUTH
+  // ============================
+  window.switchAuthTab = function(tab) {
+    document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active', (i===0&&tab==='login')||(i===1&&tab==='register')));
+    document.getElementById('login-form').style.display = tab==='login'?'flex':'none';
+    document.getElementById('register-form').style.display = tab==='register'?'flex':'none';
+  }
+
+  document.getElementById('reg-role').addEventListener('change', function() {
+    document.getElementById('reg-child').style.display = this.value==='parent'?'block':'none';
+  });
+
+  window.doRegister = async function() {
+    const name = document.getElementById('reg-name').value.trim();
+    const email = document.getElementById('reg-email').value.trim();
+    const pass = document.getElementById('reg-pass').value;
+    const role = document.getElementById('reg-role').value;
+    const child = document.getElementById('reg-child').value.trim();
+    if (!name||!email||!pass) { showToast('Please fill all fields'); return; }
+    try {
+      showLoading(true);
+      const cred = await createUserWithEmailAndPassword(auth, email, pass);
+      await setDoc(doc(db, 'users', cred.user.uid), {
+        name, email, role, child: child||'',
+        quizzes: 0, totalScore: 0, streak: 0,
+        subjectScores: { English:0, Biology:0, Chemistry:0, Physics:0 },
+        subjectAttempts: { English:0, Biology:0, Chemistry:0, Physics:0 },
+        createdAt: new Date().toISOString()
+      });
+      showLoading(false);
+    } catch(e) {
+      showLoading(false);
+      showToast(e.message.includes('email-already') ? 'Email already registered!' : 'Registration failed. Try again.');
+    }
+  }
+
+  window.doLogin = async function() {
+    const email = document.getElementById('login-email').value.trim();
+    const pass = document.getElementById('login-pass').value;
+    if (!email||!pass) { showToast('Please fill all fields'); return; }
+    try {
+      showLoading(true);
+      await signInWithEmailAndPassword(auth, email, pass);
+      showLoading(false);
+    } catch(e) {
+      showLoading(false);
+      showToast('Invalid email or password');
+    }
+  }
+
+  window.doLogout = async function() {
+    await signOut(auth);
+  }
+
+  async function loadUserData() {
+    if (!currentUser) return;
+    const snap = await getDoc(doc(db, 'users', currentUser.uid));
+    if (snap.exists()) userData = snap.data();
+  }
+
+  async function saveUserData() {
+    if (!currentUser || !userData) return;
+    await setDoc(doc(db, 'users', currentUser.uid), userData, { merge: true });
+  }
+
+  // ============================
+  // HOME
+  // ============================
+  function updateGreeting() {
+    if (!userData) return;
+    const h = new Date().getHours();
+    const time = h<12?'Good morning ☀️':h<17?'Good afternoon 🌤️':'Good evening 🌙';
+    document.getElementById('greeting-text').textContent = time + ', ' + userData.name.split(' ')[0] + '!';
+    document.getElementById('greeting-name').textContent = 'Keep pushing — JAMB is waiting! 🇳🇬';
+  }
+
+  function loadDailyQuote() {
+    const q = QUOTES[new Date().getDay() % QUOTES.length];
+    document.getElementById('daily-quote').textContent = q.q;
+    document.getElementById('quote-author').textContent = '— ' + q.a;
+  }
+
+  function updateStats() {
+    if (!userData) return;
+    const avg = userData.quizzes > 0 ? Math.round(userData.totalScore / userData.quizzes) : 0;
+    document.getElementById('stat-quizzes').textContent = userData.quizzes || 0;
+    document.getElementById('stat-avg').textContent = avg + '%';
+    document.getElementById('ps-quizzes').textContent = userData.quizzes || 0;
+    document.getElementById('ps-avg').textContent = avg + '%';
+    document.getElementById('ps-streak').textContent = (userData.streak||0) + '🔥';
+  }
+
+  // ============================
+  // TABS
+  // ============================
+  window.showTab = function(tab) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('tab-'+tab).classList.add('active');
+    const navEl = document.getElementById('nav-'+tab);
+    if (navEl) navEl.classList.add('active');
+    if (tab==='bookmarks') loadBookmarks();
+    if (tab==='profile') loadProfile();
+    if (tab==='leaderboard') loadLeaderboard();
+  }
+
+  window.goToQuiz = function(subject) {
+    showTab('quiz');
+    selectSubjectForQuiz(subject);
+  }
+
+  // ============================
+  // QUIZ
+  // ============================
+  window.selectSubjectForQuiz = function(subject) {
+    selectedSubject = subject;
+    document.getElementById('quiz-mode-subject-title').textContent = '📚 ' + subject + ' — Choose Mode';
+    document.getElementById('quiz-mode-select').style.display = 'block';
+  }
+
+  function shuffle(arr) { return [...arr].sort(()=>Math.random()-0.5); }
+
+  window.startQuiz = function(mode, count) {
+    const qs = shuffle(QUESTIONS[selectedSubject]).slice(0, count);
+    currentQuiz = { subject:selectedSubject, questions:qs, index:0, score:0, mode, timer:null, timeLeft:30, isMock:false };
+    showScreen('quiz-active');
+    renderQuestion();
+  }
+
+  window.startMockExam = function() {
+    const qs = [
+      ...shuffle(QUESTIONS.English).slice(0,10),
+      ...shuffle(QUESTIONS.Biology).slice(0,10),
+      ...shuffle(QUESTIONS.Chemistry).slice(0,10),
+      ...shuffle(QUESTIONS.Physics).slice(0,10),
+    ];
+    currentQuiz = { subject:'Mock Exam', questions:qs, index:0, score:0, mode:'timed', timer:null, timeLeft:7200, isMock:true };
+    showScreen('quiz-active');
+    renderQuestion();
+  }
+
+  function renderQuestion() {
+    const q = currentQuiz.questions[currentQuiz.index];
+    const total = currentQuiz.questions.length;
+    const idx = currentQuiz.index;
+    document.getElementById('q-counter').textContent = `Q ${idx+1}/${total}`;
+    document.getElementById('q-subject-badge').textContent = currentQuiz.subject;
+    document.getElementById('q-progress').style.width = ((idx+1)/total*100) + '%';
+    document.getElementById('q-meta').textContent = `Question ${idx+1} of ${total}`;
+    document.getElementById('q-text').textContent = q.q;
+    document.getElementById('explanation-box').textContent = q.exp;
+    document.getElementById('explanation-box').classList.remove('show');
+    document.getElementById('btn-next').disabled = true;
+    document.getElementById('bookmark-btn').textContent = '🔖';
+
+    const optList = document.getElementById('options-list');
+    optList.innerHTML = '';
+    ['A','B','C','D'].forEach((letter, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'option-btn';
+      btn.innerHTML = `<span class="opt-letter">${letter}</span>${q.opts[i]}`;
+      btn.onclick = () => selectAnswer(i, btn);
+      optList.appendChild(btn);
+    });
+
+    clearInterval(currentQuiz.timer);
+    if (currentQuiz.isMock) {
+      updateMockTimer();
+      currentQuiz.timer = setInterval(()=>{
+        currentQuiz.timeLeft--;
+        updateMockTimer();
+        if (currentQuiz.timeLeft<=0) { clearInterval(currentQuiz.timer); showResult(); }
+      }, 1000);
+    } else if (currentQuiz.mode==='timed') {
+      currentQuiz.timeLeft = 30;
+      updateTimer();
+      currentQuiz.timer = setInterval(()=>{
+        currentQuiz.timeLeft--;
+        updateTimer();
+        if (currentQuiz.timeLeft<=0) {
+          clearInterval(currentQuiz.timer);
+          document.querySelectorAll('.option-btn').forEach(b=>b.disabled=true);
+          document.getElementById('btn-next').disabled = false;
+          document.querySelectorAll('.option-btn')[currentQuiz.questions[currentQuiz.index].ans].classList.add('correct');
+        }
+      }, 1000);
+    } else {
+      document.getElementById('timer-display').textContent = '∞';
+    }
+  }
+
+  function updateTimer() {
+    const t = currentQuiz.timeLeft;
+    const el = document.getElementById('timer-display');
+    el.textContent = t + 's';
+    el.classList.toggle('urgent', t<=10);
+  }
+
+  function updateMockTimer() {
+    const t = currentQuiz.timeLeft;
+    const m = Math.floor(t/60), s = t%60;
+    document.getElementById('timer-display').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+  }
+
+  window.selectAnswer = function(idx, btn) {
+    clearInterval(currentQuiz.timer);
+    const q = currentQuiz.questions[currentQuiz.index];
+    document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
+    if (idx === q.ans) {
+      btn.classList.add('correct');
+      currentQuiz.score++;
+    } else {
+      btn.classList.add('wrong');
+      document.querySelectorAll('.option-btn')[q.ans].classList.add('correct');
+    }
+    document.getElementById('explanation-box').classList.add('show');
+    document.getElementById('btn-next').disabled = false;
+  }
+
+  window.nextQuestion = function() {
+    currentQuiz.index++;
+    if (currentQuiz.index >= currentQuiz.questions.length) {
+      clearInterval(currentQuiz.timer);
+      showResult();
+    } else {
+      renderQuestion();
+    }
+  }
+
+  async function showResult() {
+    clearInterval(currentQuiz.timer);
+    const score = currentQuiz.score;
+    const total = currentQuiz.questions.length;
+    const pct = Math.round(score/total*100);
+
+    document.getElementById('result-score').textContent = score;
+    document.getElementById('result-total').textContent = `out of ${total}`;
+
+    let emoji, title, sub;
+    if (pct>=80) { emoji='🎉'; title='Excellent!'; sub='You are ready for JAMB! 🔥'; }
+    else if (pct>=60) { emoji='👍'; title='Good Job!'; sub='Keep pushing, you are almost there!'; }
+    else if (pct>=40) { emoji='💪'; title='Keep Going!'; sub='Revise your notes and try again.'; }
+    else { emoji='📚'; title='Keep Studying!'; sub='Read your notes again and retry!'; }
+
+    document.getElementById('result-emoji').textContent = emoji;
+    document.getElementById('result-title').textContent = title;
+    document.getElementById('result-sub').textContent = sub;
+
+    // Save to Firebase
+    if (userData) {
+      userData.quizzes = (userData.quizzes||0) + 1;
+      userData.totalScore = (userData.totalScore||0) + pct;
+      // Update subject scores
+      if (!currentQuiz.isMock && currentQuiz.subject !== 'Mock Exam') {
+        const subj = currentQuiz.subject;
+        if (!userData.subjectScores) userData.subjectScores = {};
+        if (!userData.subjectAttempts) userData.subjectAttempts = {};
+        userData.subjectScores[subj] = (userData.subjectScores[subj]||0) + pct;
+        userData.subjectAttempts[subj] = (userData.subjectAttempts[subj]||0) + 1;
+      }
+      await saveUserData();
+      updateStats();
+    }
+
+    showScreen('quiz-result');
+  }
+
+  window.retryQuiz = function() {
+    showScreen('quiz-active');
+    if (currentQuiz.isMock) startMockExam();
+    else startQuiz(currentQuiz.mode, currentQuiz.questions.length);
+  }
+
+  window.exitQuiz = function() {
+    clearInterval(currentQuiz.timer);
+    showApp();
+    showTab('home');
+  }
+
+  // ============================
+  // BOOKMARKS
+  // ============================
+  window.bookmarkCurrent = function() {
+    const q = currentQuiz.questions[currentQuiz.index];
+    const already = bookmarks.find(b=>b.q===q.q);
+    if (already) { showToast('Already bookmarked!'); return; }
+    bookmarks.push({ subject:currentQuiz.subject, q:q.q, ans:q.opts[q.ans], exp:q.exp });
+    localStorage.setItem('sg_bookmarks', JSON.stringify(bookmarks));
+    document.getElementById('bookmark-btn').textContent = '✅';
+    showToast('Bookmarked! 🔖');
+  }
+
+  function loadBookmarks() {
+    const el = document.getElementById('bookmarks-list');
+    if (bookmarks.length===0) {
+      el.innerHTML = '<div class="empty-state"><div class="es-icon">🔖</div><p>No bookmarks yet.<br>Bookmark questions during a quiz!</p></div>';
+      return;
+    }
+    el.innerHTML = bookmarks.map((b,i)=>`
+      <div class="bookmark-item">
+        <div class="bm-subject">${b.subject}</div>
+        <div class="bm-q">${b.q}</div>
+        <div class="bm-ans">✅ ${b.ans}</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:6px">${b.exp}</div>
+        <button class="bm-remove" onclick="removeBookmark(${i})">Remove 🗑️</button>
+      </div>
+    `).join('');
+  }
+
+  window.removeBookmark = function(i) {
+    bookmarks.splice(i,1);
+    localStorage.setItem('sg_bookmarks', JSON.stringify(bookmarks));
+    loadBookmarks();
+  }
+
+  // ============================
+  // NOTES
+  // ============================
+  window.showNotes = function(subject, tabEl) {
+    document.querySelectorAll('.notes-tab').forEach(t=>t.classList.remove('active'));
+    if (tabEl) tabEl.classList.add('active');
+    const topics = NOTES[subject] || [];
+    document.getElementById('notes-content').innerHTML = topics.map((t,i)=>`
+      <div class="topic-item">
+        <div class="topic-header" onclick="toggleTopic(${i})">
+          <h3>${t.title}</h3>
+          <span id="arrow-${i}">▼</span>
+        </div>
+        <div class="topic-body" id="topic-body-${i}">${t.body}</div>
+      </div>
+    `).join('');
+  }
+
+  window.toggleTopic = function(i) {
+    const body = document.getElementById('topic-body-'+i);
+    const arrow = document.getElementById('arrow-'+i);
+    body.classList.toggle('open');
+    arrow.textContent = body.classList.contains('open') ? '▲' : '▼';
+  }
+
+  // ============================
+  // LEADERBOARD (REAL FIREBASE)
+  // ============================
+  async function loadLeaderboard() {
+    const el = document.getElementById('lb-list');
+    el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted)">Loading... ⏳</div>';
+    try {
+      const snap = await getDocs(collection(db, 'users'));
+      let users = [];
+      snap.forEach(d => users.push({id:d.id, ...d.data()}));
+      users = users
+        .filter(u => u.role === 'student')
+        .sort((a,b) => {
+          const avgA = a.quizzes>0 ? a.totalScore/a.quizzes : 0;
+          const avgB = b.quizzes>0 ? b.totalScore/b.quizzes : 0;
+          return avgB - avgA;
+        })
+        .slice(0, 10);
+
+      if (users.length === 0) {
+        el.innerHTML = '<div class="empty-state"><div class="es-icon">🏆</div><p>No students yet.<br>Be the first on the leaderboard!</p></div>';
+        return;
+      }
+
+      const ranks = ['🥇','🥈','🥉'];
+      const rankClass = ['gold','silver','bronze'];
+      el.innerHTML = users.map((u,i) => {
+        const avg = u.quizzes>0 ? Math.round(u.totalScore/u.quizzes) : 0;
+        const isMe = currentUser && u.id===currentUser.uid;
+        return `<div class="lb-item ${isMe?'me':''}">
+          <div class="lb-rank ${rankClass[i]||''}">${ranks[i]||i+1}</div>
+          <div class="lb-name">${u.name} ${isMe?'(You)':''}</div>
+          <div class="lb-score">${avg}%</div>
+        </div>`;
+      }).join('');
+    } catch(e) {
+      el.innerHTML = '<div class="empty-state"><div class="es-icon">📡</div><p>Could not load leaderboard.<br>Check your connection.</p></div>';
+    }
+  }
+
+  // ============================
+  // PROFILE
+  // ============================
+  async function loadProfile() {
+    if (!userData) return;
+    document.getElementById('profile-avatar').textContent = userData.name[0].toUpperCase();
+    document.getElementById('profile-name-display').textContent = userData.name;
+    document.getElementById('profile-role-display').textContent = userData.role==='parent' ? '👨‍👩‍👧 Parent' : '🎓 UTME Candidate';
+    updateStats();
+
+    if (userData.role === 'parent') {
+      document.getElementById('parent-section').style.display = 'block';
+      document.getElementById('child-name-display').textContent = userData.child || 'Your Child';
+      await loadChildProgress();
+    }
+  }
+
+  async function loadChildProgress() {
+    if (!userData || !userData.child) return;
+    try {
+      // Find child by name
+      const snap = await getDocs(collection(db, 'users'));
+      let child = null;
+      snap.forEach(d => {
+        const u = d.data();
+        if (u.name && u.name.toLowerCase() === userData.child.toLowerCase()) child = u;
+      });
+      if (!child) return;
+
+      const subjects = ['English','Biology','Chemistry','Physics'];
+      const ids = ['eng','bio','chem','phy'];
+      subjects.forEach((s,i) => {
+        const attempts = child.subjectAttempts?.[s] || 0;
+        const scores = child.subjectScores?.[s] || 0;
+        const avg = attempts > 0 ? Math.round(scores/attempts) : 0;
+        const el = document.getElementById('p-'+ids[i]);
+        const pb = document.getElementById('pb-'+ids[i]);
+        if (el) el.textContent = avg + '%';
+        if (pb) pb.style.width = avg + '%';
+      });
+    } catch(e) { console.log('Could not load child progress'); }
+  }
+
+  // ============================
+  // DARK MODE
+  // ============================
+  window.toggleDark = function() {
+    isDark = !isDark;
+    document.body.classList.toggle('light', !isDark);
+    document.getElementById('dark-btn').textContent = isDark ? '🌙' : '☀️';
+    const toggle = document.getElementById('dark-toggle');
+    if (toggle) toggle.classList.toggle('on', isDark);
+  }
+
+  // ============================
+  // HELPERS
+  // ============================
+  function showLoading(show) {
+    document.getElementById('loading-overlay').style.display = show ? 'flex' : 'none';
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  window.showAuth = function() { showScreen('auth'); }
+
+  // Init notes
+  showNotes('English', null);
+</script>
 <style>
   :root {
-    --bg: #0a1628;
-    --bg2: #111e35;
-    --bg3: #172544;
-    --card: #1a2d50;
-    --accent: #00d4aa;
-    --accent2: #f7c948;
-    --accent3: #ff6b6b;
-    --text: #e8f0fe;
-    --muted: #7a90b8;
-    --border: #243455;
-    --success: #00d4aa;
-    --danger: #ff6b6b;
-    --radius: 16px;
-    --shadow: 0 8px 32px rgba(0,0,0,0.4);
+    --bg:#0a1628;--bg2:#111e35;--bg3:#172544;--card:#1a2d50;
+    --accent:#00d4aa;--accent2:#f7c948;--accent3:#ff6b6b;
+    --text:#e8f0fe;--muted:#7a90b8;--border:#243455;
+    --success:#00d4aa;--danger:#ff6b6b;--radius:16px;
+    --shadow:0 8px 32px rgba(0,0,0,0.4);
   }
-  .light {
-    --bg: #f0f4ff;
-    --bg2: #e4eaf8;
-    --bg3: #d8e2f5;
-    --card: #ffffff;
-    --text: #0a1628;
-    --muted: #5a6a8a;
-    --border: #c8d4ee;
-  }
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; transition:background 0.3s,color 0.3s; }
-  h1,h2,h3,.brand { font-family:'Syne',sans-serif; }
+  .light{--bg:#f0f4ff;--bg2:#e4eaf8;--bg3:#d8e2f5;--card:#fff;--text:#0a1628;--muted:#5a6a8a;--border:#c8d4ee;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:background 0.3s,color 0.3s;}
+  h1,h2,h3,.brand{font-family:'Syne',sans-serif;}
+  .screen{display:none;min-height:100vh;}
+  .screen.active{display:flex;flex-direction:column;}
 
-  /* ===== SCREENS ===== */
-  .screen { display:none; min-height:100vh; }
-  .screen.active { display:flex; flex-direction:column; }
+  /* LOADING */
+  #loading-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:999;align-items:center;justify-content:center;flex-direction:column;gap:16px;}
+  .spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  #loading-overlay p{color:var(--text);font-size:14px;}
 
-  /* ===== SPLASH ===== */
-  #splash {
-    background: linear-gradient(135deg, #0a1628 0%, #0e2245 50%, #0a3060 100%);
-    align-items:center; justify-content:center; text-align:center; padding:40px 20px;
-  }
-  .splash-logo { font-size:52px; font-weight:800; color:var(--accent); letter-spacing:-2px; margin-bottom:8px; }
-  .splash-logo span { color:var(--accent2); }
-  .splash-tag { color:var(--muted); font-size:16px; margin-bottom:48px; letter-spacing:2px; text-transform:uppercase; }
-  .splash-btn { background:var(--accent); color:#0a1628; padding:16px 40px; border:none; border-radius:50px; font-size:17px; font-weight:700; font-family:'Syne',sans-serif; cursor:pointer; transition:transform 0.2s,box-shadow 0.2s; box-shadow:0 4px 20px rgba(0,212,170,0.4); }
-  .splash-btn:hover { transform:translateY(-2px); box-shadow:0 8px 30px rgba(0,212,170,0.5); }
-  .splash-dots { display:flex; gap:8px; justify-content:center; margin-top:48px; }
-  .splash-dots span { width:8px; height:8px; border-radius:50%; background:var(--accent); opacity:0.3; animation:pulse 1.5s infinite; }
-  .splash-dots span:nth-child(2) { animation-delay:0.3s; }
-  .splash-dots span:nth-child(3) { animation-delay:0.6s; }
-  @keyframes pulse { 0%,100%{opacity:0.3} 50%{opacity:1} }
+  /* TOAST */
+  #toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--card);color:var(--text);padding:10px 20px;border-radius:50px;font-size:13px;font-weight:600;border:1px solid var(--border);opacity:0;transition:all 0.3s;z-index:500;pointer-events:none;white-space:nowrap;}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
-  /* ===== AUTH ===== */
-  #auth { background:var(--bg); padding:24px 20px; }
-  .auth-header { text-align:center; padding:40px 0 32px; }
-  .auth-header .brand { font-size:32px; color:var(--accent); font-weight:800; }
-  .auth-tabs { display:flex; background:var(--bg2); border-radius:12px; padding:4px; margin-bottom:24px; }
-  .auth-tab { flex:1; padding:10px; text-align:center; border-radius:10px; cursor:pointer; font-weight:600; font-size:14px; transition:all 0.2s; color:var(--muted); }
-  .auth-tab.active { background:var(--accent); color:#0a1628; }
-  .auth-form { display:flex; flex-direction:column; gap:14px; }
-  .auth-form input, .auth-form select { background:var(--bg2); border:1.5px solid var(--border); border-radius:12px; padding:14px 16px; color:var(--text); font-size:15px; font-family:'DM Sans',sans-serif; outline:none; transition:border-color 0.2s; }
-  .auth-form input:focus { border-color:var(--accent); }
-  .auth-form input::placeholder { color:var(--muted); }
-  .btn-primary { background:var(--accent); color:#0a1628; border:none; border-radius:12px; padding:15px; font-size:16px; font-weight:700; font-family:'Syne',sans-serif; cursor:pointer; transition:all 0.2s; }
-  .btn-primary:hover { filter:brightness(1.1); transform:translateY(-1px); }
-  .auth-switch { text-align:center; color:var(--muted); font-size:14px; margin-top:8px; }
-  .auth-switch span { color:var(--accent); cursor:pointer; font-weight:600; }
-  .role-badge { display:inline-block; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; }
-  .role-student { background:rgba(0,212,170,0.15); color:var(--accent); }
-  .role-parent { background:rgba(247,201,72,0.15); color:var(--accent2); }
+  /* SPLASH */
+  #splash{background:linear-gradient(135deg,#0a1628 0%,#0e2245 50%,#0a3060 100%);align-items:center;justify-content:center;text-align:center;padding:40px 20px;}
+  .splash-logo{font-size:52px;font-weight:800;color:var(--accent);letter-spacing:-2px;margin-bottom:8px;}
+  .splash-logo span{color:var(--accent2);}
+  .splash-tag{color:var(--muted);font-size:16px;margin-bottom:48px;letter-spacing:2px;text-transform:uppercase;}
+  .splash-btn{background:var(--accent);color:#0a1628;padding:16px 40px;border:none;border-radius:50px;font-size:17px;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer;transition:transform 0.2s,box-shadow 0.2s;box-shadow:0 4px 20px rgba(0,212,170,0.4);}
+  .splash-btn:hover{transform:translateY(-2px);}
+  .splash-dots{display:flex;gap:8px;justify-content:center;margin-top:48px;}
+  .splash-dots span{width:8px;height:8px;border-radius:50%;background:var(--accent);opacity:0.3;animation:pulse 1.5s infinite;}
+  .splash-dots span:nth-child(2){animation-delay:0.3s;}
+  .splash-dots span:nth-child(3){animation-delay:0.6s;}
+  @keyframes pulse{0%,100%{opacity:0.3}50%{opacity:1}}
 
-  /* ===== MAIN APP ===== */
-  #app { background:var(--bg); }
-  .topbar { background:var(--bg2); padding:16px 20px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border); position:sticky; top:0; z-index:100; }
-  .topbar .brand { font-size:22px; color:var(--accent); font-weight:800; }
-  .topbar-actions { display:flex; gap:10px; align-items:center; }
-  .icon-btn { background:var(--bg3); border:none; border-radius:10px; padding:8px 10px; cursor:pointer; font-size:18px; color:var(--text); transition:background 0.2s; }
-  .icon-btn:hover { background:var(--border); }
+  /* AUTH */
+  #auth{background:var(--bg);padding:24px 20px;}
+  .auth-header{text-align:center;padding:40px 0 32px;}
+  .auth-header .brand{font-size:32px;color:var(--accent);font-weight:800;}
+  .auth-tabs{display:flex;background:var(--bg2);border-radius:12px;padding:4px;margin-bottom:24px;}
+  .auth-tab{flex:1;padding:10px;text-align:center;border-radius:10px;cursor:pointer;font-weight:600;font-size:14px;transition:all 0.2s;color:var(--muted);}
+  .auth-tab.active{background:var(--accent);color:#0a1628;}
+  .auth-form{display:flex;flex-direction:column;gap:14px;}
+  .auth-form input,.auth-form select{background:var(--bg2);border:1.5px solid var(--border);border-radius:12px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color 0.2s;}
+  .auth-form input:focus{border-color:var(--accent);}
+  .auth-form input::placeholder{color:var(--muted);}
+  .btn-primary{background:var(--accent);color:#0a1628;border:none;border-radius:12px;padding:15px;font-size:16px;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer;transition:all 0.2s;}
+  .auth-switch{text-align:center;color:var(--muted);font-size:14px;margin-top:8px;}
+  .auth-switch span{color:var(--accent);cursor:pointer;font-weight:600;}
 
-  .content { padding:20px; flex:1; overflow-y:auto; }
+  /* APP */
+  #app{background:var(--bg);}
+  .topbar{background:var(--bg2);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;}
+  .topbar .brand{font-size:22px;color:var(--accent);font-weight:800;}
+  .topbar-actions{display:flex;gap:10px;align-items:center;}
+  .icon-btn{background:var(--bg3);border:none;border-radius:10px;padding:8px 10px;cursor:pointer;font-size:18px;color:var(--text);transition:background 0.2s;}
+  .content{padding:20px;flex:1;overflow-y:auto;}
+  .tab-content{display:none;}
+  .tab-content.active{display:block;}
 
-  /* ===== HOME ===== */
-  .greeting { margin-bottom:20px; }
-  .greeting h2 { font-size:24px; font-weight:700; }
-  .greeting p { color:var(--muted); font-size:14px; margin-top:4px; }
+  /* HOME */
+  .greeting{margin-bottom:20px;}
+  .greeting h2{font-size:24px;font-weight:700;}
+  .greeting p{color:var(--muted);font-size:14px;margin-top:4px;}
+  .quote-card{background:linear-gradient(135deg,var(--accent) 0%,#00b894 100%);border-radius:var(--radius);padding:20px;margin-bottom:20px;color:#0a1628;}
+  .quote-card .q-icon{font-size:28px;margin-bottom:8px;}
+  .quote-card p{font-size:15px;font-weight:600;line-height:1.5;}
+  .quote-card span{font-size:12px;opacity:0.7;margin-top:6px;display:block;}
+  .stats-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
+  .stat-card{background:var(--card);border-radius:var(--radius);padding:16px;border:1px solid var(--border);}
+  .stat-card .stat-num{font-size:28px;font-weight:800;font-family:'Syne',sans-serif;color:var(--accent);}
+  .stat-card .stat-label{font-size:12px;color:var(--muted);margin-top:2px;}
+  .section-title{font-size:17px;font-weight:700;margin-bottom:12px;}
+  .subject-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
+  .subject-card{background:var(--card);border-radius:var(--radius);padding:18px 14px;border:1px solid var(--border);cursor:pointer;transition:all 0.2s;text-align:center;}
+  .subject-card:hover{border-color:var(--accent);transform:translateY(-2px);}
+  .subject-card .s-icon{font-size:30px;margin-bottom:8px;}
+  .subject-card .s-name{font-size:13px;font-weight:600;}
+  .subject-card .s-count{font-size:11px;color:var(--muted);margin-top:2px;}
+  .quick-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;}
+  .qa-btn{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);padding:16px;cursor:pointer;text-align:center;transition:all 0.2s;color:var(--text);}
+  .qa-btn:hover{border-color:var(--accent);}
+  .qa-btn .qa-icon{font-size:24px;margin-bottom:6px;}
+  .qa-btn .qa-label{font-size:13px;font-weight:600;display:block;}
 
-  .quote-card { background:linear-gradient(135deg, var(--accent) 0%, #00b894 100%); border-radius:var(--radius); padding:20px; margin-bottom:20px; color:#0a1628; }
-  .quote-card .q-icon { font-size:28px; margin-bottom:8px; }
-  .quote-card p { font-size:15px; font-weight:600; line-height:1.5; }
-  .quote-card span { font-size:12px; opacity:0.7; margin-top:6px; display:block; }
+  /* BOTTOM NAV */
+  .bottom-nav{background:var(--bg2);border-top:1px solid var(--border);display:flex;padding:8px 0 16px;position:sticky;bottom:0;z-index:100;}
+  .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;padding:6px 0;color:var(--muted);font-size:10px;font-weight:600;border:none;background:none;}
+  .nav-item .nav-icon{font-size:22px;}
+  .nav-item.active{color:var(--accent);}
 
-  .stats-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px; }
-  .stat-card { background:var(--card); border-radius:var(--radius); padding:16px; border:1px solid var(--border); }
-  .stat-card .stat-num { font-size:28px; font-weight:800; font-family:'Syne',sans-serif; color:var(--accent); }
-  .stat-card .stat-label { font-size:12px; color:var(--muted); margin-top:2px; }
+  /* QUIZ */
+  .subject-select-list{display:flex;flex-direction:column;gap:10px;}
+  .subject-select-item{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);padding:16px 18px;cursor:pointer;display:flex;align-items:center;gap:14px;transition:all 0.2s;}
+  .subject-select-item:hover{border-color:var(--accent);}
+  .subject-select-item .si-icon{font-size:28px;}
+  .subject-select-item .si-info h3{font-size:15px;font-weight:600;}
+  .subject-select-item .si-info p{font-size:12px;color:var(--muted);}
+  .quiz-mode-btns{display:flex;flex-direction:column;gap:10px;margin-top:16px;}
+  .mode-btn{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);padding:18px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:14px;transition:all 0.2s;color:var(--text);}
+  .mode-btn:hover{border-color:var(--accent);}
+  .mode-btn .mb-icon{font-size:28px;}
+  .mode-btn .mb-info h3{font-size:15px;font-weight:600;font-family:'Syne',sans-serif;}
+  .mode-btn .mb-info p{font-size:12px;color:var(--muted);margin-top:2px;}
+  .back-btn{background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;display:flex;align-items:center;gap:6px;margin-bottom:16px;font-family:'DM Sans',sans-serif;padding:0;}
 
-  .section-title { font-size:17px; font-weight:700; margin-bottom:12px; color:var(--text); }
+  /* ACTIVE QUIZ */
+  #quiz-active{display:none;flex-direction:column;min-height:100vh;background:var(--bg);}
+  #quiz-active.show{display:flex;}
+  .quiz-header{background:var(--bg2);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);}
+  .quiz-progress{flex:1;margin:0 16px;}
+  .progress-bar{background:var(--bg3);border-radius:50px;height:6px;overflow:hidden;}
+  .progress-fill{background:var(--accent);height:100%;border-radius:50px;transition:width 0.4s;}
+  .timer-badge{background:var(--bg3);border-radius:10px;padding:6px 12px;font-weight:700;font-size:14px;color:var(--accent2);font-family:'Syne',sans-serif;}
+  .timer-badge.urgent{color:var(--danger);animation:blink 1s infinite;}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0.5}}
+  .q-body{padding:20px;flex:1;}
+  .q-meta{font-size:12px;color:var(--muted);margin-bottom:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;}
+  .q-text{font-size:17px;line-height:1.6;font-weight:500;margin-bottom:24px;}
+  .options-list{display:flex;flex-direction:column;gap:10px;}
+  .option-btn{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:14px 16px;cursor:pointer;text-align:left;font-size:15px;color:var(--text);font-family:'DM Sans',sans-serif;transition:all 0.2s;display:flex;align-items:center;gap:12px;}
+  .option-btn .opt-letter{font-weight:700;color:var(--muted);font-family:'Syne',sans-serif;min-width:20px;}
+  .option-btn:hover:not(:disabled){border-color:var(--accent);}
+  .option-btn.correct{background:rgba(0,212,170,0.15);border-color:var(--accent);}
+  .option-btn.correct .opt-letter{color:var(--accent);}
+  .option-btn.wrong{background:rgba(255,107,107,0.15);border-color:var(--danger);}
+  .option-btn.wrong .opt-letter{color:var(--danger);}
+  .explanation-box{background:var(--bg2);border-left:3px solid var(--accent);border-radius:0 12px 12px 0;padding:14px 16px;margin-top:16px;font-size:14px;line-height:1.6;color:var(--muted);display:none;}
+  .explanation-box.show{display:block;}
+  .quiz-footer{padding:16px 20px;background:var(--bg2);border-top:1px solid var(--border);}
+  .btn-next{background:var(--accent);color:#0a1628;border:none;border-radius:12px;padding:14px;width:100%;font-size:16px;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer;}
+  .btn-next:disabled{opacity:0.4;cursor:not-allowed;}
 
-  .subject-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px; }
-  .subject-card { background:var(--card); border-radius:var(--radius); padding:18px 14px; border:1px solid var(--border); cursor:pointer; transition:all 0.2s; text-align:center; }
-  .subject-card:hover { border-color:var(--accent); transform:translateY(-2px); box-shadow:var(--shadow); }
-  .subject-card .s-icon { font-size:30px; margin-bottom:8px; }
-  .subject-card .s-name { font-size:13px; font-weight:600; }
-  .subject-card .s-count { font-size:11px; color:var(--muted); margin-top:2px; }
+  /* RESULT */
+  #quiz-result{display:none;flex-direction:column;min-height:100vh;background:var(--bg);align-items:center;justify-content:center;padding:30px 20px;text-align:center;}
+  #quiz-result.show{display:flex;}
+  .result-ring{width:150px;height:150px;border-radius:50%;border:8px solid var(--bg3);margin:0 auto 24px;display:flex;align-items:center;justify-content:center;flex-direction:column;}
+  .result-ring .score-num{font-size:36px;font-weight:800;font-family:'Syne',sans-serif;color:var(--accent);}
+  .result-ring .score-total{font-size:14px;color:var(--muted);}
+  .result-title{font-size:26px;font-weight:800;margin-bottom:8px;}
+  .result-sub{color:var(--muted);font-size:15px;margin-bottom:32px;}
+  .result-actions{display:flex;flex-direction:column;gap:10px;width:100%;max-width:300px;}
+  .btn-secondary{background:var(--bg2);color:var(--text);border:1.5px solid var(--border);border-radius:12px;padding:13px;font-size:15px;font-weight:600;font-family:'Syne',sans-serif;cursor:pointer;}
 
-  .quick-actions { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:24px; }
-  .qa-btn { background:var(--card); border:1.5px solid var(--border); border-radius:var(--radius); padding:16px; cursor:pointer; text-align:center; transition:all 0.2s; color:var(--text); }
-  .qa-btn:hover { border-color:var(--accent); }
-  .qa-btn .qa-icon { font-size:24px; margin-bottom:6px; }
-  .qa-btn .qa-label { font-size:13px; font-weight:600; display:block; }
+  /* NOTES */
+  .notes-subjects{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:16px;}
+  .notes-subjects::-webkit-scrollbar{display:none;}
+  .notes-tab{background:var(--bg2);border:1.5px solid var(--border);border-radius:50px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:600;white-space:nowrap;color:var(--muted);transition:all 0.2s;}
+  .notes-tab.active{background:var(--accent);color:#0a1628;border-color:var(--accent);}
+  .topic-list{display:flex;flex-direction:column;gap:8px;}
+  .topic-item{background:var(--card);border:1px solid var(--border);border-radius:14px;cursor:pointer;overflow:hidden;}
+  .topic-header{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;}
+  .topic-header h3{font-size:14px;font-weight:600;}
+  .topic-body{padding:0 16px 14px;font-size:14px;line-height:1.7;color:var(--muted);display:none;}
+  .topic-body.open{display:block;}
 
-  /* ===== BOTTOM NAV ===== */
-  .bottom-nav { background:var(--bg2); border-top:1px solid var(--border); display:flex; padding:8px 0 16px; position:sticky; bottom:0; z-index:100; }
-  .nav-item { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer; padding:6px 0; transition:color 0.2s; color:var(--muted); font-size:10px; font-weight:600; border:none; background:none; }
-  .nav-item .nav-icon { font-size:22px; }
-  .nav-item.active { color:var(--accent); }
+  /* LEADERBOARD */
+  .lb-header{background:linear-gradient(135deg,#172544,#0e2245);border-radius:var(--radius);padding:20px;margin-bottom:16px;text-align:center;}
+  .lb-header h2{font-size:22px;font-weight:800;color:var(--accent2);}
+  .lb-header p{font-size:13px;color:var(--muted);margin-top:4px;}
+  .lb-list{display:flex;flex-direction:column;gap:8px;}
+  .lb-item{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;}
+  .lb-item.me{border-color:var(--accent);background:rgba(0,212,170,0.08);}
+  .lb-rank{font-size:18px;font-weight:800;font-family:'Syne',sans-serif;min-width:28px;color:var(--muted);}
+  .lb-rank.gold{color:#f7c948;}
+  .lb-rank.silver{color:#c0c0c0;}
+  .lb-rank.bronze{color:#cd7f32;}
+  .lb-name{flex:1;font-weight:600;font-size:14px;}
+  .lb-score{font-weight:700;color:var(--accent);font-family:'Syne',sans-serif;}
 
-  /* ===== TABS ===== */
-  .tab-content { display:none; }
-  .tab-content.active { display:block; }
+  /* BOOKMARKS */
+  .bookmark-item{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px;}
+  .bookmark-item .bm-subject{font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
+  .bookmark-item .bm-q{font-size:14px;line-height:1.5;margin-bottom:10px;}
+  .bookmark-item .bm-ans{font-size:13px;color:var(--accent);font-weight:600;}
+  .bookmark-item .bm-remove{background:none;border:none;color:var(--danger);font-size:12px;cursor:pointer;margin-top:8px;font-family:'DM Sans',sans-serif;}
 
-  /* ===== QUIZ ===== */
-  .subject-select-list { display:flex; flex-direction:column; gap:10px; }
-  .subject-select-item { background:var(--card); border:1.5px solid var(--border); border-radius:var(--radius); padding:16px 18px; cursor:pointer; display:flex; align-items:center; gap:14px; transition:all 0.2s; }
-  .subject-select-item:hover { border-color:var(--accent); }
-  .subject-select-item .si-icon { font-size:28px; }
-  .subject-select-item .si-info h3 { font-size:15px; font-weight:600; }
-  .subject-select-item .si-info p { font-size:12px; color:var(--muted); }
+  /* PROFILE */
+  .profile-header{background:var(--bg2);border-radius:var(--radius);padding:24px;text-align:center;margin-bottom:16px;}
+  .profile-avatar{width:72px;height:72px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;font-family:'Syne',sans-serif;color:#0a1628;margin:0 auto 12px;}
+  .profile-name{font-size:20px;font-weight:700;}
+  .profile-role{font-size:12px;color:var(--muted);margin-top:4px;}
+  .profile-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px;}
+  .ps-card{background:var(--card);border-radius:14px;padding:14px;text-align:center;border:1px solid var(--border);}
+  .ps-card .ps-num{font-size:22px;font-weight:800;font-family:'Syne',sans-serif;color:var(--accent);}
+  .ps-card .ps-label{font-size:11px;color:var(--muted);margin-top:2px;}
+  .settings-list{display:flex;flex-direction:column;gap:2px;}
+  .setting-item{background:var(--card);border-radius:12px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-bottom:4px;}
+  .setting-item .si-left{display:flex;align-items:center;gap:12px;font-size:14px;font-weight:500;}
+  .setting-item .si-icon2{font-size:20px;}
+  .toggle{width:44px;height:24px;background:var(--bg3);border-radius:50px;position:relative;cursor:pointer;transition:background 0.3s;}
+  .toggle.on{background:var(--accent);}
+  .toggle::after{content:'';position:absolute;width:18px;height:18px;background:#fff;border-radius:50%;top:3px;left:3px;transition:left 0.3s;}
+  .toggle.on::after{left:23px;}
+  .logout-btn{background:rgba(255,107,107,0.1);border:1.5px solid var(--danger);color:var(--danger);border-radius:12px;padding:13px;width:100%;font-size:15px;font-weight:600;font-family:'Syne',sans-serif;cursor:pointer;margin-top:16px;}
 
-  .quiz-mode-btns { display:flex; flex-direction:column; gap:10px; margin-top:16px; }
-  .mode-btn { background:var(--card); border:1.5px solid var(--border); border-radius:var(--radius); padding:18px; cursor:pointer; text-align:left; display:flex; align-items:center; gap:14px; transition:all 0.2s; color:var(--text); }
-  .mode-btn:hover { border-color:var(--accent); }
-  .mode-btn .mb-icon { font-size:28px; }
-  .mode-btn .mb-info h3 { font-size:15px; font-weight:600; font-family:'Syne',sans-serif; }
-  .mode-btn .mb-info p { font-size:12px; color:var(--muted); margin-top:2px; }
+  /* PARENT */
+  .parent-child-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:14px;}
+  .parent-child-card h3{font-size:16px;font-weight:700;margin-bottom:4px;}
+  .parent-child-card .pcc-role{font-size:12px;color:var(--muted);margin-bottom:14px;}
+  .progress-subject{margin-bottom:12px;}
+  .progress-subject .ps-top{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;}
+  .progress-subject .ps-top span:last-child{color:var(--accent);font-weight:600;}
 
-  /* ===== ACTIVE QUIZ ===== */
-  #quiz-active { display:none; flex-direction:column; min-height:100vh; background:var(--bg); }
-  #quiz-active.show { display:flex; }
-  .quiz-header { background:var(--bg2); padding:16px 20px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border); }
-  .quiz-progress { flex:1; margin:0 16px; }
-  .progress-bar { background:var(--bg3); border-radius:50px; height:6px; overflow:hidden; }
-  .progress-fill { background:var(--accent); height:100%; border-radius:50px; transition:width 0.4s; }
-  .timer-badge { background:var(--bg3); border-radius:10px; padding:6px 12px; font-weight:700; font-size:14px; color:var(--accent2); font-family:'Syne',sans-serif; }
-  .timer-badge.urgent { color:var(--danger); animation:blink 1s infinite; }
-  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.5} }
-  .q-body { padding:20px; flex:1; }
-  .q-meta { font-size:12px; color:var(--muted); margin-bottom:12px; font-weight:600; text-transform:uppercase; letter-spacing:1px; }
-  .q-text { font-size:17px; line-height:1.6; font-weight:500; margin-bottom:24px; }
-  .options-list { display:flex; flex-direction:column; gap:10px; }
-  .option-btn { background:var(--card); border:1.5px solid var(--border); border-radius:14px; padding:14px 16px; cursor:pointer; text-align:left; font-size:15px; color:var(--text); font-family:'DM Sans',sans-serif; transition:all 0.2s; display:flex; align-items:center; gap:12px; }
-  .option-btn .opt-letter { font-weight:700; color:var(--muted); font-family:'Syne',sans-serif; min-width:20px; }
-  .option-btn:hover:not(:disabled) { border-color:var(--accent); }
-  .option-btn.correct { background:rgba(0,212,170,0.15); border-color:var(--accent); }
-  .option-btn.correct .opt-letter { color:var(--accent); }
-  .option-btn.wrong { background:rgba(255,107,107,0.15); border-color:var(--danger); }
-  .option-btn.wrong .opt-letter { color:var(--danger); }
-  .explanation-box { background:var(--bg2); border-left:3px solid var(--accent); border-radius:0 12px 12px 0; padding:14px 16px; margin-top:16px; font-size:14px; line-height:1.6; color:var(--muted); display:none; }
-  .explanation-box.show { display:block; }
-  .quiz-footer { padding:16px 20px; background:var(--bg2); border-top:1px solid var(--border); }
-  .btn-next { background:var(--accent); color:#0a1628; border:none; border-radius:12px; padding:14px; width:100%; font-size:16px; font-weight:700; font-family:'Syne',sans-serif; cursor:pointer; transition:all 0.2s; }
-  .btn-next:disabled { opacity:0.4; cursor:not-allowed; }
-
-  /* ===== RESULT ===== */
-  #quiz-result { display:none; flex-direction:column; min-height:100vh; background:var(--bg); align-items:center; justify-content:center; padding:30px 20px; text-align:center; }
-  #quiz-result.show { display:flex; }
-  .result-ring { width:150px; height:150px; border-radius:50%; border:8px solid var(--bg3); margin:0 auto 24px; display:flex; align-items:center; justify-content:center; flex-direction:column; position:relative; }
-  .result-ring .score-num { font-size:36px; font-weight:800; font-family:'Syne',sans-serif; color:var(--accent); }
-  .result-ring .score-total { font-size:14px; color:var(--muted); }
-  .result-title { font-size:26px; font-weight:800; margin-bottom:8px; }
-  .result-sub { color:var(--muted); font-size:15px; margin-bottom:32px; }
-  .result-actions { display:flex; flex-direction:column; gap:10px; width:100%; max-width:300px; }
-  .btn-secondary { background:var(--bg2); color:var(--text); border:1.5px solid var(--border); border-radius:12px; padding:13px; font-size:15px; font-weight:600; font-family:'Syne',sans-serif; cursor:pointer; transition:all 0.2s; }
-  .btn-secondary:hover { border-color:var(--accent); }
-
-  /* ===== NOTES ===== */
-  .notes-subjects { display:flex; gap:8px; overflow-x:auto; padding-bottom:8px; margin-bottom:16px; }
-  .notes-subjects::-webkit-scrollbar { display:none; }
-  .notes-tab { background:var(--bg2); border:1.5px solid var(--border); border-radius:50px; padding:8px 16px; cursor:pointer; font-size:13px; font-weight:600; white-space:nowrap; color:var(--muted); transition:all 0.2s; }
-  .notes-tab.active { background:var(--accent); color:#0a1628; border-color:var(--accent); }
-  .topic-list { display:flex; flex-direction:column; gap:8px; }
-  .topic-item { background:var(--card); border:1px solid var(--border); border-radius:14px; cursor:pointer; overflow:hidden; transition:border-color 0.2s; }
-  .topic-item:hover { border-color:var(--accent); }
-  .topic-header { padding:14px 16px; display:flex; align-items:center; justify-content:space-between; }
-  .topic-header h3 { font-size:14px; font-weight:600; }
-  .topic-header span { color:var(--muted); font-size:18px; }
-  .topic-body { padding:0 16px 14px; font-size:14px; line-height:1.7; color:var(--muted); display:none; }
-  .topic-body.open { display:block; }
-
-  /* ===== LEADERBOARD ===== */
-  .lb-header { background:linear-gradient(135deg,#172544,#0e2245); border-radius:var(--radius); padding:20px; margin-bottom:16px; text-align:center; }
-  .lb-header h2 { font-size:22px; font-weight:800; color:var(--accent2); }
-  .lb-header p { font-size:13px; color:var(--muted); margin-top:4px; }
-  .lb-list { display:flex; flex-direction:column; gap:8px; }
-  .lb-item { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:14px 16px; display:flex; align-items:center; gap:14px; }
-  .lb-item.me { border-color:var(--accent); background:rgba(0,212,170,0.08); }
-  .lb-rank { font-size:18px; font-weight:800; font-family:'Syne',sans-serif; min-width:28px; color:var(--muted); }
-  .lb-rank.gold { color:#f7c948; }
-  .lb-rank.silver { color:#c0c0c0; }
-  .lb-rank.bronze { color:#cd7f32; }
-  .lb-name { flex:1; font-weight:600; font-size:14px; }
-  .lb-score { font-weight:700; color:var(--accent); font-family:'Syne',sans-serif; }
-
-  /* ===== BOOKMARKS ===== */
-  .bookmark-list { display:flex; flex-direction:column; gap:10px; }
-  .bookmark-item { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:16px; }
-  .bookmark-item .bm-subject { font-size:11px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; }
-  .bookmark-item .bm-q { font-size:14px; line-height:1.5; margin-bottom:10px; }
-  .bookmark-item .bm-ans { font-size:13px; color:var(--accent); font-weight:600; }
-  .bookmark-item .bm-remove { background:none; border:none; color:var(--danger); font-size:12px; cursor:pointer; margin-top:8px; font-family:'DM Sans',sans-serif; }
-
-  /* ===== PROFILE ===== */
-  .profile-header { background:var(--bg2); border-radius:var(--radius); padding:24px; text-align:center; margin-bottom:16px; }
-  .profile-avatar { width:72px; height:72px; border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center; font-size:28px; font-weight:800; font-family:'Syne',sans-serif; color:#0a1628; margin:0 auto 12px; }
-  .profile-name { font-size:20px; font-weight:700; }
-  .profile-role { font-size:12px; color:var(--muted); margin-top:4px; }
-  .profile-stats { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:16px; }
-  .ps-card { background:var(--card); border-radius:14px; padding:14px; text-align:center; border:1px solid var(--border); }
-  .ps-card .ps-num { font-size:22px; font-weight:800; font-family:'Syne',sans-serif; color:var(--accent); }
-  .ps-card .ps-label { font-size:11px; color:var(--muted); margin-top:2px; }
-  .settings-list { display:flex; flex-direction:column; gap:2px; }
-  .setting-item { background:var(--card); border-radius:12px; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; margin-bottom:4px; }
-  .setting-item:hover { background:var(--bg3); }
-  .setting-item .si-left { display:flex; align-items:center; gap:12px; font-size:14px; font-weight:500; }
-  .setting-item .si-icon2 { font-size:20px; }
-  .toggle { width:44px; height:24px; background:var(--bg3); border-radius:50px; position:relative; cursor:pointer; transition:background 0.3s; }
-  .toggle.on { background:var(--accent); }
-  .toggle::after { content:''; position:absolute; width:18px; height:18px; background:#fff; border-radius:50%; top:3px; left:3px; transition:left 0.3s; }
-  .toggle.on::after { left:23px; }
-  .logout-btn { background:rgba(255,107,107,0.1); border:1.5px solid var(--danger); color:var(--danger); border-radius:12px; padding:13px; width:100%; font-size:15px; font-weight:600; font-family:'Syne',sans-serif; cursor:pointer; margin-top:16px; transition:all 0.2s; }
-  .logout-btn:hover { background:rgba(255,107,107,0.2); }
-
-  /* ===== PARENT VIEW ===== */
-  .parent-child-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px; margin-bottom:14px; }
-  .parent-child-card h3 { font-size:16px; font-weight:700; margin-bottom:4px; }
-  .parent-child-card .pcc-role { font-size:12px; color:var(--muted); margin-bottom:14px; }
-  .progress-subject { margin-bottom:12px; }
-  .progress-subject .ps-top { display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px; }
-  .progress-subject .ps-top span:last-child { color:var(--accent); font-weight:600; }
-
-  /* ===== EMPTY STATE ===== */
-  .empty-state { text-align:center; padding:60px 20px; color:var(--muted); }
-  .empty-state .es-icon { font-size:48px; margin-bottom:16px; }
-  .empty-state p { font-size:15px; }
-
-  /* ===== MODAL ===== */
-  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:200; align-items:flex-end; justify-content:center; }
-  .modal-overlay.show { display:flex; }
-  .modal { background:var(--bg2); border-radius:24px 24px 0 0; padding:24px 20px 40px; width:100%; max-width:500px; }
-  .modal h3 { font-size:18px; font-weight:700; margin-bottom:16px; }
-  .modal-close { float:right; background:none; border:none; font-size:24px; color:var(--muted); cursor:pointer; margin-top:-4px; }
-
-  .back-btn { background:none; border:none; color:var(--muted); font-size:14px; cursor:pointer; display:flex; align-items:center; gap:6px; margin-bottom:16px; font-family:'DM Sans',sans-serif; padding:0; }
-  .back-btn:hover { color:var(--text); }
-
-  /* scrollbar */
-  ::-webkit-scrollbar { width:4px; }
-  ::-webkit-scrollbar-track { background:var(--bg); }
-  ::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
-
-  .badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700; background:rgba(0,212,170,0.15); color:var(--accent); }
-  .badge.yellow { background:rgba(247,201,72,0.15); color:var(--accent2); }
-  .mt-8 { margin-top:8px; }
-  .mt-16 { margin-top:16px; }
-  .page-title { font-size:22px; font-weight:800; margin-bottom:4px; }
-  .page-sub { font-size:13px; color:var(--muted); margin-bottom:20px; }
+  /* EMPTY */
+  .empty-state{text-align:center;padding:60px 20px;color:var(--muted);}
+  .empty-state .es-icon{font-size:48px;margin-bottom:16px;}
+  .empty-state p{font-size:15px;}
+  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(0,212,170,0.15);color:var(--accent);}
+  .mt-16{margin-top:16px;}
+  .page-title{font-size:22px;font-weight:800;margin-bottom:4px;}
+  .page-sub{font-size:13px;color:var(--muted);margin-bottom:20px;}
+  ::-webkit-scrollbar{width:4px;}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
 </style>
 </head>
 <body>
+
+<!-- LOADING -->
+<div id="loading-overlay">
+  <div class="spinner"></div>
+  <p>Please wait...</p>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
 
 <!-- SPLASH -->
 <div id="splash" class="screen active">
@@ -296,25 +870,21 @@
     <div class="auth-tab active" onclick="switchAuthTab('login')">Login</div>
     <div class="auth-tab" onclick="switchAuthTab('register')">Register</div>
   </div>
-
-  <!-- LOGIN -->
   <div id="login-form" class="auth-form">
     <input type="email" id="login-email" placeholder="Email address" />
     <input type="password" id="login-pass" placeholder="Password" />
     <button class="btn-primary" onclick="doLogin()">Login →</button>
     <div class="auth-switch">No account? <span onclick="switchAuthTab('register')">Register here</span></div>
   </div>
-
-  <!-- REGISTER -->
   <div id="register-form" class="auth-form" style="display:none">
     <input type="text" id="reg-name" placeholder="Full name" />
     <input type="email" id="reg-email" placeholder="Email address" />
-    <input type="password" id="reg-pass" placeholder="Create password" />
+    <input type="password" id="reg-pass" placeholder="Create password (min 6 chars)" />
     <select id="reg-role">
       <option value="student">I am a Student</option>
       <option value="parent">I am a Parent</option>
     </select>
-    <input type="text" id="reg-child" placeholder="Child's name (parents only)" style="display:none" />
+    <input type="text" id="reg-child" placeholder="Your child's full name (parents only)" style="display:none" />
     <button class="btn-primary" onclick="doRegister()">Create Account →</button>
     <div class="auth-switch">Have account? <span onclick="switchAuthTab('login')">Login here</span></div>
   </div>
@@ -322,7 +892,6 @@
 
 <!-- MAIN APP -->
 <div id="app" class="screen">
-  <!-- TOPBAR -->
   <div class="topbar">
     <div class="brand">StudyGee</div>
     <div class="topbar-actions">
@@ -331,19 +900,17 @@
     </div>
   </div>
 
-  <!-- TAB: HOME -->
+  <!-- HOME -->
   <div id="tab-home" class="tab-content active content">
     <div class="greeting">
-      <h2 id="greeting-text">Good morning! 👋</h2>
-      <p id="greeting-name">Welcome back to StudyGee</p>
+      <h2 id="greeting-text">Welcome! 👋</h2>
+      <p id="greeting-name">Keep pushing — JAMB is waiting!</p>
     </div>
-
     <div class="quote-card">
       <div class="q-icon">💬</div>
-      <p id="daily-quote">Success is not final, failure is not fatal — it is the courage to continue that counts.</p>
-      <span id="quote-author">— Winston Churchill</span>
+      <p id="daily-quote">Loading quote...</p>
+      <span id="quote-author"></span>
     </div>
-
     <div class="stats-row">
       <div class="stat-card">
         <div class="stat-num" id="stat-quizzes">0</div>
@@ -354,95 +921,44 @@
         <div class="stat-label">Average Score</div>
       </div>
     </div>
-
     <div class="section-title">📚 Subjects</div>
     <div class="subject-grid">
-      <div class="subject-card" onclick="goToQuiz('English')">
-        <div class="s-icon">📖</div>
-        <div class="s-name">English</div>
-        <div class="s-count">50 questions</div>
-      </div>
-      <div class="subject-card" onclick="goToQuiz('Biology')">
-        <div class="s-icon">🧬</div>
-        <div class="s-name">Biology</div>
-        <div class="s-count">50 questions</div>
-      </div>
-      <div class="subject-card" onclick="goToQuiz('Chemistry')">
-        <div class="s-icon">⚗️</div>
-        <div class="s-name">Chemistry</div>
-        <div class="s-count">50 questions</div>
-      </div>
-      <div class="subject-card" onclick="goToQuiz('Physics')">
-        <div class="s-icon">⚡</div>
-        <div class="s-name">Physics</div>
-        <div class="s-count">50 questions</div>
-      </div>
+      <div class="subject-card" onclick="goToQuiz('English')"><div class="s-icon">📖</div><div class="s-name">English</div><div class="s-count">10 questions</div></div>
+      <div class="subject-card" onclick="goToQuiz('Biology')"><div class="s-icon">🧬</div><div class="s-name">Biology</div><div class="s-count">10 questions</div></div>
+      <div class="subject-card" onclick="goToQuiz('Chemistry')"><div class="s-icon">⚗️</div><div class="s-name">Chemistry</div><div class="s-count">10 questions</div></div>
+      <div class="subject-card" onclick="goToQuiz('Physics')"><div class="s-icon">⚡</div><div class="s-name">Physics</div><div class="s-count">10 questions</div></div>
     </div>
-
     <div class="section-title">⚡ Quick Actions</div>
     <div class="quick-actions">
-      <button class="qa-btn" onclick="startMockExam()">
-        <div class="qa-icon">🏆</div>
-        <span class="qa-label">Mock Exam</span>
-      </button>
-      <button class="qa-btn" onclick="showTab('notes')">
-        <div class="qa-icon">📝</div>
-        <span class="qa-label">Study Notes</span>
-      </button>
-      <button class="qa-btn" onclick="showTab('leaderboard')">
-        <div class="qa-icon">🥇</div>
-        <span class="qa-label">Leaderboard</span>
-      </button>
-      <button class="qa-btn" onclick="showTab('bookmarks')">
-        <div class="qa-icon">🔖</div>
-        <span class="qa-label">Bookmarks</span>
-      </button>
+      <button class="qa-btn" onclick="startMockExam()"><div class="qa-icon">🏆</div><span class="qa-label">Mock Exam</span></button>
+      <button class="qa-btn" onclick="showTab('notes')"><div class="qa-icon">📝</div><span class="qa-label">Study Notes</span></button>
+      <button class="qa-btn" onclick="showTab('leaderboard')"><div class="qa-icon">🥇</div><span class="qa-label">Leaderboard</span></button>
+      <button class="qa-btn" onclick="showTab('bookmarks')"><div class="qa-icon">🔖</div><span class="qa-label">Bookmarks</span></button>
     </div>
   </div>
 
-  <!-- TAB: QUIZ -->
+  <!-- QUIZ -->
   <div id="tab-quiz" class="tab-content content">
     <div class="page-title">Quiz Mode</div>
     <div class="page-sub">Choose a subject to practice</div>
     <div class="subject-select-list">
-      <div class="subject-select-item" onclick="selectSubjectForQuiz('English')">
-        <div class="si-icon">📖</div>
-        <div class="si-info"><h3>English Language</h3><p>Comprehension, Grammar, Vocabulary</p></div>
-      </div>
-      <div class="subject-select-item" onclick="selectSubjectForQuiz('Biology')">
-        <div class="si-icon">🧬</div>
-        <div class="si-info"><h3>Biology</h3><p>Cell Biology, Genetics, Ecology</p></div>
-      </div>
-      <div class="subject-select-item" onclick="selectSubjectForQuiz('Chemistry')">
-        <div class="si-icon">⚗️</div>
-        <div class="si-info"><h3>Chemistry</h3><p>Periodic Table, Reactions, Organic</p></div>
-      </div>
-      <div class="subject-select-item" onclick="selectSubjectForQuiz('Physics')">
-        <div class="si-icon">⚡</div>
-        <div class="si-info"><h3>Physics</h3><p>Mechanics, Electricity, Waves</p></div>
-      </div>
+      <div class="subject-select-item" onclick="selectSubjectForQuiz('English')"><div class="si-icon">📖</div><div class="si-info"><h3>English Language</h3><p>Comprehension, Grammar, Vocabulary</p></div></div>
+      <div class="subject-select-item" onclick="selectSubjectForQuiz('Biology')"><div class="si-icon">🧬</div><div class="si-info"><h3>Biology</h3><p>Cell Biology, Genetics, Ecology</p></div></div>
+      <div class="subject-select-item" onclick="selectSubjectForQuiz('Chemistry')"><div class="si-icon">⚗️</div><div class="si-info"><h3>Chemistry</h3><p>Periodic Table, Reactions, Organic</p></div></div>
+      <div class="subject-select-item" onclick="selectSubjectForQuiz('Physics')"><div class="si-icon">⚡</div><div class="si-info"><h3>Physics</h3><p>Mechanics, Electricity, Waves</p></div></div>
     </div>
-    <div id="quiz-mode-select" style="display:none; margin-top:20px;">
+    <div id="quiz-mode-select" style="display:none;margin-top:20px;">
       <button class="back-btn" onclick="document.getElementById('quiz-mode-select').style.display='none'">← Back</button>
       <div class="section-title" id="quiz-mode-subject-title">Choose Mode</div>
       <div class="quiz-mode-btns">
-        <button class="mode-btn" onclick="startQuiz('practice',10)">
-          <div class="mb-icon">🧪</div>
-          <div class="mb-info"><h3>Practice (10 Qs)</h3><p>Quick practice, no timer pressure</p></div>
-        </button>
-        <button class="mode-btn" onclick="startQuiz('timed',20)">
-          <div class="mb-icon">⏱️</div>
-          <div class="mb-info"><h3>Timed Quiz (20 Qs)</h3><p>30 seconds per question</p></div>
-        </button>
-        <button class="mode-btn" onclick="startMockExam()">
-          <div class="mb-icon">🏆</div>
-          <div class="mb-info"><h3>Full Mock Exam</h3><p>All subjects, 2 hours — just like UTME!</p></div>
-        </button>
+        <button class="mode-btn" onclick="startQuiz('practice',10)"><div class="mb-icon">🧪</div><div class="mb-info"><h3>Practice (10 Qs)</h3><p>Quick practice, no timer pressure</p></div></button>
+        <button class="mode-btn" onclick="startQuiz('timed',10)"><div class="mb-icon">⏱️</div><div class="mb-info"><h3>Timed Quiz (10 Qs)</h3><p>30 seconds per question</p></div></button>
+        <button class="mode-btn" onclick="startMockExam()"><div class="mb-icon">🏆</div><div class="mb-info"><h3>Full Mock Exam</h3><p>All subjects, 2 hours — just like UTME!</p></div></button>
       </div>
     </div>
   </div>
 
-  <!-- TAB: NOTES -->
+  <!-- NOTES -->
   <div id="tab-notes" class="tab-content content">
     <div class="page-title">Study Notes</div>
     <div class="page-sub">Tap a topic to expand</div>
@@ -455,23 +971,20 @@
     <div id="notes-content" class="topic-list"></div>
   </div>
 
-  <!-- TAB: LEADERBOARD -->
+  <!-- LEADERBOARD -->
   <div id="tab-leaderboard" class="tab-content content">
-    <div class="lb-header">
-      <h2>🏆 Leaderboard</h2>
-      <p>Top students this week</p>
-    </div>
-    <div class="lb-list" id="lb-list"></div>
+    <div class="lb-header"><h2>🏆 Leaderboard</h2><p>Top students this week</p></div>
+    <div class="lb-list" id="lb-list"><div style="text-align:center;padding:30px;color:var(--muted)">Loading... ⏳</div></div>
   </div>
 
-  <!-- TAB: BOOKMARKS -->
+  <!-- BOOKMARKS -->
   <div id="tab-bookmarks" class="tab-content content">
     <div class="page-title">🔖 Bookmarks</div>
     <div class="page-sub">Questions you saved to review</div>
     <div id="bookmarks-list"></div>
   </div>
 
-  <!-- TAB: PROFILE -->
+  <!-- PROFILE -->
   <div id="tab-profile" class="tab-content content">
     <div class="profile-header">
       <div class="profile-avatar" id="profile-avatar">S</div>
@@ -483,63 +996,31 @@
       <div class="ps-card"><div class="ps-num" id="ps-avg">0%</div><div class="ps-label">Avg Score</div></div>
       <div class="ps-card"><div class="ps-num" id="ps-streak">0🔥</div><div class="ps-label">Streak</div></div>
     </div>
-
-    <!-- Parent child progress (shown if parent) -->
     <div id="parent-section" style="display:none">
       <div class="section-title">👨‍👩‍👧 Your Child's Progress</div>
       <div class="parent-child-card">
         <h3 id="child-name-display">Child Name</h3>
-        <div class="pcc-role">Monitoring progress</div>
-        <div class="progress-subject">
-          <div class="ps-top"><span>English</span><span id="p-eng">72%</span></div>
-          <div class="progress-bar"><div class="progress-fill" id="pb-eng" style="width:72%"></div></div>
-        </div>
-        <div class="progress-subject">
-          <div class="ps-top"><span>Biology</span><span id="p-bio">58%</span></div>
-          <div class="progress-bar"><div class="progress-fill" id="pb-bio" style="width:58%"></div></div>
-        </div>
-        <div class="progress-subject">
-          <div class="ps-top"><span>Chemistry</span><span id="p-chem">65%</span></div>
-          <div class="progress-bar"><div class="progress-fill" id="pb-chem" style="width:65%"></div></div>
-        </div>
-        <div class="progress-subject">
-          <div class="ps-top"><span>Physics</span><span id="p-phy">80%</span></div>
-          <div class="progress-bar"><div class="progress-fill" id="pb-phy" style="width:80%"></div></div>
-        </div>
+        <div class="pcc-role">Live progress from Firebase ☁️</div>
+        <div class="progress-subject"><div class="ps-top"><span>English</span><span id="p-eng">0%</span></div><div class="progress-bar"><div class="progress-fill" id="pb-eng" style="width:0%"></div></div></div>
+        <div class="progress-subject"><div class="ps-top"><span>Biology</span><span id="p-bio">0%</span></div><div class="progress-bar"><div class="progress-fill" id="pb-bio" style="width:0%"></div></div></div>
+        <div class="progress-subject"><div class="ps-top"><span>Chemistry</span><span id="p-chem">0%</span></div><div class="progress-bar"><div class="progress-fill" id="pb-chem" style="width:0%"></div></div></div>
+        <div class="progress-subject"><div class="ps-top"><span>Physics</span><span id="p-phy">0%</span></div><div class="progress-bar"><div class="progress-fill" id="pb-phy" style="width:0%"></div></div></div>
       </div>
     </div>
-
     <div class="settings-list">
       <div class="section-title mt-16">Settings</div>
-      <div class="setting-item">
-        <div class="si-left"><span class="si-icon2">🌙</span> Dark Mode</div>
-        <div class="toggle on" id="dark-toggle" onclick="toggleDark()"></div>
-      </div>
-      <div class="setting-item">
-        <div class="si-left"><span class="si-icon2">🔔</span> Daily Reminders</div>
-        <div class="toggle on" id="notif-toggle" onclick="this.classList.toggle('on')"></div>
-      </div>
+      <div class="setting-item"><div class="si-left"><span class="si-icon2">🌙</span> Dark Mode</div><div class="toggle on" id="dark-toggle" onclick="toggleDark()"></div></div>
+      <div class="setting-item"><div class="si-left"><span class="si-icon2">🔔</span> Daily Reminders</div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
     </div>
     <button class="logout-btn" onclick="doLogout()">Logout</button>
   </div>
 
-  <!-- BOTTOM NAV -->
   <div class="bottom-nav">
-    <button class="nav-item active" onclick="showTab('home')" id="nav-home">
-      <span class="nav-icon">🏠</span><span>Home</span>
-    </button>
-    <button class="nav-item" onclick="showTab('quiz')" id="nav-quiz">
-      <span class="nav-icon">🧪</span><span>Quiz</span>
-    </button>
-    <button class="nav-item" onclick="showTab('notes')" id="nav-notes">
-      <span class="nav-icon">📝</span><span>Notes</span>
-    </button>
-    <button class="nav-item" onclick="showTab('leaderboard')" id="nav-leaderboard">
-      <span class="nav-icon">🏆</span><span>Ranks</span>
-    </button>
-    <button class="nav-item" onclick="showTab('profile')" id="nav-profile">
-      <span class="nav-icon">👤</span><span>Profile</span>
-    </button>
+    <button class="nav-item active" onclick="showTab('home')" id="nav-home"><span class="nav-icon">🏠</span><span>Home</span></button>
+    <button class="nav-item" onclick="showTab('quiz')" id="nav-quiz"><span class="nav-icon">🧪</span><span>Quiz</span></button>
+    <button class="nav-item" onclick="showTab('notes')" id="nav-notes"><span class="nav-icon">📝</span><span>Notes</span></button>
+    <button class="nav-item" onclick="showTab('leaderboard')" id="nav-leaderboard"><span class="nav-icon">🏆</span><span>Ranks</span></button>
+    <button class="nav-item" onclick="showTab('profile')" id="nav-profile"><span class="nav-icon">👤</span><span>Profile</span></button>
   </div>
 </div>
 
@@ -558,7 +1039,7 @@
   </div>
   <div class="q-body">
     <div class="q-meta" id="q-meta">Question 1</div>
-    <div class="q-text" id="q-text">Loading question...</div>
+    <div class="q-text" id="q-text">Loading...</div>
     <div class="options-list" id="options-list"></div>
     <div class="explanation-box" id="explanation-box"></div>
   </div>
@@ -570,531 +1051,20 @@
   </div>
 </div>
 
-<!-- QUIZ RESULT -->
+<!-- RESULT -->
 <div id="quiz-result">
   <div style="font-size:48px;margin-bottom:16px;" id="result-emoji">🎉</div>
   <div class="result-ring">
-    <div class="score-num" id="result-score">8</div>
+    <div class="score-num" id="result-score">0</div>
     <div class="score-total" id="result-total">out of 10</div>
   </div>
-  <div class="result-title" id="result-title">Excellent!</div>
-  <div class="result-sub" id="result-sub">You're ready for JAMB!</div>
+  <div class="result-title" id="result-title">Well done!</div>
+  <div class="result-sub" id="result-sub">Keep studying!</div>
   <div class="result-actions">
     <button class="btn-primary" onclick="retryQuiz()">Try Again 🔄</button>
     <button class="btn-secondary" onclick="exitQuiz()">Back to Home</button>
   </div>
 </div>
 
-<script>
-// ============================
-// DATA
-// ============================
-const QUESTIONS = {
-  English: [
-    { q:"Choose the word closest in meaning to 'Eloquent'", opts:["Fluent","Silent","Confused","Angry"], ans:0, exp:"Eloquent means having or exercising the power of fluent, forceful, and appropriate speech." },
-    { q:"Identify the figure of speech: 'The pen is mightier than the sword'", opts:["Simile","Metaphor","Personification","Hyperbole"], ans:1, exp:"This is a metaphor — it compares two things without using 'like' or 'as'." },
-    { q:"Which of these sentences is grammatically correct?", opts:["She don't like him","He doesn't likes it","They don't agree","We doesn't know"], ans:2, exp:"'They don't agree' is correct. 'Don't' is used with plural subjects." },
-    { q:"Choose the antonym of 'Verbose'", opts:["Wordy","Concise","Talkative","Fluent"], ans:1, exp:"Verbose means using more words than needed. Concise is the opposite — brief and to the point." },
-    { q:"In comprehension, a 'topic sentence' is:", opts:["The last sentence","The main idea of a paragraph","A question","A conclusion"], ans:1, exp:"A topic sentence states the main idea of a paragraph, usually appearing at the beginning." },
-    { q:"Choose the correct plural of 'criterion'", opts:["Criterions","Criterias","Criteria","Criterion"], ans:2, exp:"'Criteria' is the correct plural of 'criterion' — it is a Latin-origin word." },
-    { q:"Which punctuation ends an exclamatory sentence?", opts:[".","?","!",","], ans:2, exp:"An exclamatory sentence expresses strong emotion and ends with an exclamation mark (!)." },
-    { q:"'He gave me a fat cheque' — fat is used as:", opts:["Noun","Adverb","Adjective","Verb"], ans:2, exp:"'Fat' here describes the noun 'cheque', so it is an adjective." },
-    { q:"Choose the word that is misspelled:", opts:["Necessary","Accomodate","Beautiful","Occasion"], ans:1, exp:"The correct spelling is 'Accommodate' with double 'c' and double 'm'." },
-    { q:"A word that sounds like another but has different meaning is called:", opts:["Synonym","Antonym","Homophone","Metaphor"], ans:2, exp:"Homophones are words that sound the same but have different meanings, e.g. 'hear' and 'here'." },
-  ],
-  Biology: [
-    { q:"The powerhouse of the cell is the:", opts:["Nucleus","Mitochondria","Ribosome","Cell membrane"], ans:1, exp:"Mitochondria produce ATP (energy) through cellular respiration, earning the nickname 'powerhouse of the cell'." },
-    { q:"Which blood group is the universal donor?", opts:["A","B","AB","O"], ans:3, exp:"Blood group O negative is the universal donor because it lacks A, B, and Rh antigens." },
-    { q:"Photosynthesis takes place in the:", opts:["Mitochondria","Ribosome","Chloroplast","Vacuole"], ans:2, exp:"Chloroplasts contain chlorophyll and are where photosynthesis converts sunlight into glucose." },
-    { q:"DNA stands for:", opts:["Deoxyribonucleic Acid","Di-nitrogen Acid","Double Nitric Acid","None"], ans:0, exp:"DNA (Deoxyribonucleic Acid) is the molecule carrying genetic information in living organisms." },
-    { q:"The process by which plants lose water through leaves is:", opts:["Respiration","Transpiration","Osmosis","Diffusion"], ans:1, exp:"Transpiration is the evaporation of water from plant surfaces, mainly through stomata in leaves." },
-    { q:"Which organ produces insulin?", opts:["Liver","Kidney","Pancreas","Stomach"], ans:2, exp:"The pancreas produces insulin, which regulates blood glucose levels." },
-    { q:"Osmosis is the movement of water from:", opts:["High to low concentration","Low to high solute concentration","High solute to low solute","None"], ans:1, exp:"Osmosis is movement of water from low solute concentration (high water) to high solute concentration (low water) across a semi-permeable membrane." },
-    { q:"The basic unit of heredity is:", opts:["Cell","Gene","Chromosome","Nucleus"], ans:1, exp:"Genes are segments of DNA that carry hereditary information and are the basic unit of inheritance." },
-    { q:"Which part of the brain controls balance?", opts:["Cerebrum","Medulla","Cerebellum","Thalamus"], ans:2, exp:"The cerebellum coordinates movement, balance, and fine motor control." },
-    { q:"Anaerobic respiration produces:", opts:["CO2 and water","Lactic acid or ethanol","Only oxygen","Glucose"], ans:1, exp:"Without oxygen, cells produce lactic acid (in animals) or ethanol and CO2 (in yeast) through anaerobic respiration." },
-  ],
-  Chemistry: [
-    { q:"The atomic number of Carbon is:", opts:["6","12","8","14"], ans:0, exp:"Carbon has atomic number 6, meaning it has 6 protons in its nucleus." },
-    { q:"What is the chemical formula for water?", opts:["H2O2","HO","H2O","H3O"], ans:2, exp:"Water consists of 2 hydrogen atoms and 1 oxygen atom, giving the formula H2O." },
-    { q:"Which gas is produced when acid reacts with a metal?", opts:["Oxygen","Hydrogen","Carbon dioxide","Nitrogen"], ans:1, exp:"When metals react with acids, hydrogen gas is released. For example: Zn + H2SO4 → ZnSO4 + H2." },
-    { q:"The pH of a neutral solution is:", opts:["0","7","14","5"], ans:1, exp:"pH 7 is neutral. Below 7 is acidic, above 7 is alkaline/basic." },
-    { q:"Ionic bonds form between:", opts:["Two metals","Two non-metals","Metal and non-metal","Non-metal and gas"], ans:2, exp:"Ionic bonds form when a metal transfers electrons to a non-metal, creating oppositely charged ions." },
-    { q:"Which element is a noble gas?", opts:["Nitrogen","Chlorine","Argon","Oxygen"], ans:2, exp:"Argon is a noble gas (Group 18) — it has a full outer electron shell and is very unreactive." },
-    { q:"The process of a liquid turning to gas is called:", opts:["Condensation","Sublimation","Evaporation","Melting"], ans:2, exp:"Evaporation is the process by which a liquid converts to gas at temperatures below its boiling point." },
-    { q:"NaCl is the chemical formula for:", opts:["Sugar","Salt","Baking soda","Bleach"], ans:1, exp:"NaCl (Sodium Chloride) is common table salt, formed from Na+ and Cl- ions." },
-    { q:"Avogadro's number is approximately:", opts:["6.02 × 10²³","3.14 × 10²³","9.8 × 10²³","1.6 × 10¹⁹"], ans:0, exp:"Avogadro's number (6.02 × 10²³) is the number of atoms/molecules in one mole of a substance." },
-    { q:"Which type of reaction releases heat?", opts:["Endothermic","Exothermic","Electrolytic","Catalytic"], ans:1, exp:"Exothermic reactions release energy (heat) to the surroundings. Examples include combustion and neutralisation." },
-  ],
-  Physics: [
-    { q:"The SI unit of force is:", opts:["Joule","Watt","Newton","Pascal"], ans:2, exp:"The Newton (N) is the SI unit of force, defined as the force needed to accelerate 1 kg by 1 m/s²." },
-    { q:"Speed of light in vacuum is approximately:", opts:["3×10⁶ m/s","3×10⁸ m/s","3×10¹⁰ m/s","3×10⁴ m/s"], ans:1, exp:"The speed of light in vacuum is approximately 3×10⁸ m/s (300,000 km/s)." },
-    { q:"Which law states 'For every action there is an equal and opposite reaction'?", opts:["Newton's 1st Law","Newton's 2nd Law","Newton's 3rd Law","Ohm's Law"], ans:2, exp:"Newton's Third Law of Motion states that forces always come in equal and opposite pairs." },
-    { q:"The unit of electrical resistance is:", opts:["Ampere","Volt","Ohm","Watt"], ans:2, exp:"Resistance is measured in Ohms (Ω), named after Georg Simon Ohm." },
-    { q:"Which type of wave does not require a medium?", opts:["Sound","Water","Electromagnetic","Seismic"], ans:2, exp:"Electromagnetic waves (light, radio, X-rays) can travel through a vacuum — they don't need a medium." },
-    { q:"The formula for kinetic energy is:", opts:["mgh","½mv²","mv","Fd"], ans:1, exp:"Kinetic Energy = ½mv², where m is mass in kg and v is velocity in m/s." },
-    { q:"What happens to resistance when temperature increases?", opts:["Decreases","Stays same","Increases","Becomes zero"], ans:2, exp:"In most conductors, resistance increases with temperature as more electrons collide with vibrating ions." },
-    { q:"Pressure is defined as:", opts:["Force × Area","Force / Area","Mass × Gravity","Energy / Time"], ans:1, exp:"Pressure = Force ÷ Area. Its SI unit is Pascal (Pa), equivalent to N/m²." },
-    { q:"Which phenomenon explains the bending of light?", opts:["Reflection","Refraction","Diffraction","Dispersion"], ans:1, exp:"Refraction is the bending of light when it passes from one medium to another of different density." },
-    { q:"The acceleration due to gravity on Earth is approximately:", opts:["10 m/s²","9.8 m/s²","8.9 m/s²","12 m/s²"], ans:1, exp:"Standard gravitational acceleration on Earth's surface is 9.8 m/s² (often approximated as 10 m/s²)." },
-  ]
-};
-
-const NOTES = {
-  English: [
-    { title:"Parts of Speech", body:"There are 8 parts of speech: Noun (person/place/thing), Pronoun (replaces noun), Verb (action/being), Adjective (describes noun), Adverb (modifies verb/adjective), Preposition (shows relationship), Conjunction (joins clauses), Interjection (expresses emotion). Remember: NPVAAPCJ — 'Nice Purple Vegetables Are Always Pretty Cool, Just'." },
-    { title:"Figures of Speech", body:"Common figures in UTME: Simile (comparison using like/as), Metaphor (direct comparison), Personification (giving human traits to non-human things), Hyperbole (extreme exaggeration), Alliteration (repetition of consonant sounds), Onomatopoeia (word imitates sound), Irony (saying opposite of meaning), Oxymoron (contradictory terms together)." },
-    { title:"Tenses", body:"Present Simple: I study. Present Continuous: I am studying. Past Simple: I studied. Past Continuous: I was studying. Future Simple: I will study. Present Perfect: I have studied. Past Perfect: I had studied. UTME commonly tests the difference between Present Perfect and Simple Past." },
-    { title:"Comprehension Tips", body:"For UTME comprehension passages: (1) Read the questions FIRST before the passage. (2) Identify the main idea of each paragraph. (3) Look for contextual clues for unfamiliar words. (4) Never choose answers not supported by the text. (5) Synonyms and antonyms are common question types." },
-  ],
-  Biology: [
-    { title:"Cell Biology", body:"All living things are made of cells (Cell Theory). Animal cells have: cell membrane, nucleus, cytoplasm, mitochondria, ribosomes. Plant cells additionally have: cell wall (cellulose), chloroplasts, large central vacuole. Prokaryotic cells (bacteria) have no nucleus. Eukaryotic cells (animals, plants, fungi) have a true nucleus." },
-    { title:"Genetics & Heredity", body:"DNA carries genetic information in sequences called genes. Chromosomes are structures that carry genes. Humans have 46 chromosomes (23 pairs). Dominant alleles (uppercase) mask recessive alleles (lowercase). Gregor Mendel is the father of genetics. Key ratios: 3:1 (monohybrid), 9:3:3:1 (dihybrid). Blood group inheritance is a common UTME topic." },
-    { title:"Photosynthesis", body:"Equation: 6CO₂ + 6H₂O + light energy → C₆H₁₂O₆ + 6O₂. Occurs in chloroplasts. Two stages: Light reactions (in thylakoid) and Calvin Cycle (in stroma). Chlorophyll absorbs red and blue light best. Factors affecting rate: light intensity, CO₂ concentration, temperature, water availability." },
-    { title:"Human Systems", body:"Digestive: Mouth → Oesophagus → Stomach → Small intestine → Large intestine. Circulatory: Heart pumps blood; arteries carry blood from heart, veins return to heart. Respiratory: O₂ in, CO₂ out via lungs. Nervous: Brain + spinal cord (CNS), nerves (PNS). Excretory: Kidneys filter blood, produce urine." },
-  ],
-  Chemistry: [
-    { title:"Atomic Structure", body:"Atoms have: protons (+, in nucleus), neutrons (0, in nucleus), electrons (-, orbit nucleus). Atomic number = number of protons. Mass number = protons + neutrons. Isotopes: same atomic number, different mass numbers. Electrons fill shells: 2, 8, 8, 18... A neutral atom has equal protons and electrons." },
-    { title:"Periodic Table", body:"Elements arranged by increasing atomic number. Groups (vertical) have same number of outer electrons. Periods (horizontal) show number of electron shells. Group 1 = Alkali metals (reactive). Group 7 = Halogens. Group 8/0 = Noble gases (unreactive). Metals on left, non-metals on right, metalloids in between." },
-    { title:"Chemical Bonding", body:"Ionic bond: metal gives electrons to non-metal. Forms giant lattice structure. High melting points. Conducts electricity when dissolved. Covalent bond: non-metals share electrons. Can be single, double, or triple bonds. Low melting points generally. Metallic bond: metal atoms share sea of electrons — explains conductivity." },
-    { title:"Acids, Bases & Salts", body:"Acids: pH < 7, turn blue litmus red, react with metals to produce H₂. Common acids: HCl, H₂SO₄, HNO₃. Bases: pH > 7, turn red litmus blue. Alkalis are soluble bases. Neutralisation: Acid + Base → Salt + Water. Indicators: Litmus, Phenolphthalein, Methyl orange. UTME loves salt formation reactions." },
-  ],
-  Physics: [
-    { title:"Newton's Laws of Motion", body:"1st Law (Inertia): A body stays at rest or uniform motion unless acted upon by a force. 2nd Law: F = ma (Force = mass × acceleration). 3rd Law: Every action has equal and opposite reaction. Key UTME points: Weight = mg, momentum = mv, impulse = Ft = change in momentum." },
-    { title:"Electricity & Circuits", body:"Ohm's Law: V = IR (Voltage = Current × Resistance). Series circuit: same current, voltages add. Parallel circuit: same voltage, currents add. Power: P = IV = I²R = V²/R. Resistors in series: R_total = R₁+R₂. In parallel: 1/R_total = 1/R₁ + 1/R₂. Electric energy = Power × Time (in joules)." },
-    { title:"Waves & Light", body:"Wave types: Transverse (vibration perpendicular to motion — light, EM waves) and Longitudinal (vibration parallel — sound). Key terms: Wavelength (λ), Frequency (f), Speed (v = fλ). Light: Reflection (angle in = angle out), Refraction (bending due to speed change), Total internal reflection. EM spectrum: Radio → Microwave → Infrared → Visible → UV → X-ray → Gamma." },
-    { title:"Energy & Work", body:"Work = Force × Distance (Joules). Kinetic Energy = ½mv². Potential Energy = mgh. Conservation of Energy: Energy cannot be created or destroyed, only transformed. Efficiency = (useful output ÷ total input) × 100%. Power = Work ÷ Time (Watts). 1 kWh = 3.6 × 10⁶ J. These formulas appear in almost every UTME Physics paper." },
-  ]
-};
-
-const QUOTES = [
-  { q:"Success is not final, failure is not fatal — it is the courage to continue that counts.", a:"Winston Churchill" },
-  { q:"Education is the most powerful weapon which you can use to change the world.", a:"Nelson Mandela" },
-  { q:"The secret of getting ahead is getting started.", a:"Mark Twain" },
-  { q:"Don't watch the clock; do what it does — keep going.", a:"Sam Levenson" },
-  { q:"Believe you can and you're halfway there.", a:"Theodore Roosevelt" },
-  { q:"Your time is limited, so don't waste it living someone else's life.", a:"Steve Jobs" },
-  { q:"Hard work beats talent when talent doesn't work hard.", a:"Tim Notke" },
-  { q:"The future belongs to those who believe in the beauty of their dreams.", a:"Eleanor Roosevelt" },
-];
-
-// ============================
-// STATE
-// ============================
-let currentUser = null;
-let users = JSON.parse(localStorage.getItem('sg_users') || '[]');
-let currentQuiz = { subject:'', questions:[], index:0, score:0, mode:'practice', timer:null, timeLeft:30, isMock:false };
-let bookmarks = JSON.parse(localStorage.getItem('sg_bookmarks') || '[]');
-let isDark = true;
-
-// ============================
-// SCREENS
-// ============================
-function showScreen(id) {
-  document.querySelectorAll('.screen, #quiz-active, #quiz-result').forEach(s => {
-    s.classList.remove('active');
-    s.classList.remove('show');
-  });
-  const el = document.getElementById(id);
-  if (el.classList.contains('screen')) el.classList.add('active');
-  else el.classList.add('show');
-}
-
-function showAuth() { showScreen('auth'); }
-
-function showApp() {
-  showScreen('app');
-  updateGreeting();
-  loadDailyQuote();
-  updateStats();
-  showNotes('English', document.querySelector('.notes-tab'));
-  loadLeaderboard();
-  loadBookmarks();
-  loadProfile();
-}
-
-// ============================
-// AUTH
-// ============================
-function switchAuthTab(tab) {
-  document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active', (i===0&&tab==='login')||(i===1&&tab==='register')));
-  document.getElementById('login-form').style.display = tab==='login' ? 'flex':'none';
-  document.getElementById('register-form').style.display = tab==='register' ? 'flex':'none';
-}
-
-document.getElementById('reg-role').addEventListener('change', function() {
-  document.getElementById('reg-child').style.display = this.value==='parent' ? 'block':'none';
-});
-
-function doRegister() {
-  const name = document.getElementById('reg-name').value.trim();
-  const email = document.getElementById('reg-email').value.trim();
-  const pass = document.getElementById('reg-pass').value;
-  const role = document.getElementById('reg-role').value;
-  const child = document.getElementById('reg-child').value.trim();
-  if (!name||!email||!pass) { alert('Please fill all fields'); return; }
-  if (users.find(u=>u.email===email)) { alert('Email already registered'); return; }
-  const user = { name, email, pass, role, child, quizzes:0, totalScore:0, streak:0 };
-  users.push(user);
-  localStorage.setItem('sg_users', JSON.stringify(users));
-  currentUser = user;
-  showApp();
-}
-
-function doLogin() {
-  const email = document.getElementById('login-email').value.trim();
-  const pass = document.getElementById('login-pass').value;
-  const user = users.find(u=>u.email===email && u.pass===pass);
-  if (!user) { alert('Invalid email or password'); return; }
-  currentUser = user;
-  showApp();
-}
-
-function doLogout() {
-  currentUser = null;
-  showScreen('auth');
-}
-
-// ============================
-// HOME
-// ============================
-function updateGreeting() {
-  if (!currentUser) return;
-  const h = new Date().getHours();
-  const greet = h<12?'Good morning':'h<17?Good afternoon':'Good evening';
-  const time = h<12?'Good morning ☀️':h<17?'Good afternoon 🌤️':'Good evening 🌙';
-  document.getElementById('greeting-text').textContent = time + ', ' + currentUser.name.split(' ')[0] + '!';
-  document.getElementById('greeting-name').textContent = 'Keep pushing — JAMB is waiting!';
-}
-
-function loadDailyQuote() {
-  const q = QUOTES[new Date().getDay() % QUOTES.length];
-  document.getElementById('daily-quote').textContent = q.q;
-  document.getElementById('quote-author').textContent = '— ' + q.a;
-}
-
-function updateStats() {
-  if (!currentUser) return;
-  const avg = currentUser.quizzes > 0 ? Math.round(currentUser.totalScore / currentUser.quizzes) : 0;
-  document.getElementById('stat-quizzes').textContent = currentUser.quizzes;
-  document.getElementById('stat-avg').textContent = avg + '%';
-  document.getElementById('ps-quizzes').textContent = currentUser.quizzes;
-  document.getElementById('ps-avg').textContent = avg + '%';
-  document.getElementById('ps-streak').textContent = (currentUser.streak||0) + '🔥';
-}
-
-// ============================
-// TABS
-// ============================
-function showTab(tab) {
-  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('tab-'+tab).classList.add('active');
-  const navEl = document.getElementById('nav-'+tab);
-  if (navEl) navEl.classList.add('active');
-  if (tab==='bookmarks') loadBookmarks();
-  if (tab==='profile') loadProfile();
-}
-
-function goToQuiz(subject) {
-  showTab('quiz');
-  selectSubjectForQuiz(subject);
-}
-
-// ============================
-// QUIZ
-// ============================
-let selectedSubject = '';
-
-function selectSubjectForQuiz(subject) {
-  selectedSubject = subject;
-  document.getElementById('quiz-mode-subject-title').textContent = '📚 ' + subject + ' — Choose Mode';
-  document.getElementById('quiz-mode-select').style.display = 'block';
-}
-
-function shuffle(arr) { return [...arr].sort(()=>Math.random()-0.5); }
-
-function startQuiz(mode, count) {
-  const qs = shuffle(QUESTIONS[selectedSubject]).slice(0, count);
-  currentQuiz = { subject:selectedSubject, questions:qs, index:0, score:0, mode, timer:null, timeLeft:30, isMock:false, answered:[] };
-  showScreen('quiz-active');
-  renderQuestion();
-}
-
-function startMockExam() {
-  // Mix all subjects — 10 each = 40 questions
-  const qs = [
-    ...shuffle(QUESTIONS.English).slice(0,10),
-    ...shuffle(QUESTIONS.Biology).slice(0,10),
-    ...shuffle(QUESTIONS.Chemistry).slice(0,10),
-    ...shuffle(QUESTIONS.Physics).slice(0,10),
-  ];
-  currentQuiz = { subject:'Mock Exam', questions:qs, index:0, score:0, mode:'timed', timer:null, timeLeft:7200, isMock:true, answered:[] };
-  showScreen('quiz-active');
-  renderQuestion();
-}
-
-function renderQuestion() {
-  const q = currentQuiz.questions[currentQuiz.index];
-  const total = currentQuiz.questions.length;
-  const idx = currentQuiz.index;
-
-  document.getElementById('q-counter').textContent = `Q ${idx+1}/${total}`;
-  document.getElementById('q-subject-badge').textContent = currentQuiz.subject;
-  document.getElementById('q-progress').style.width = ((idx+1)/total*100) + '%';
-  document.getElementById('q-meta').textContent = `Question ${idx+1} of ${total}`;
-  document.getElementById('q-text').textContent = q.q;
-  document.getElementById('explanation-box').textContent = q.exp;
-  document.getElementById('explanation-box').classList.remove('show');
-  document.getElementById('btn-next').disabled = true;
-
-  const optList = document.getElementById('options-list');
-  optList.innerHTML = '';
-  const letters = ['A','B','C','D'];
-  q.opts.forEach((opt, i) => {
-    const btn = document.createElement('button');
-    btn.className = 'option-btn';
-    btn.innerHTML = `<span class="opt-letter">${letters[i]}</span>${opt}`;
-    btn.onclick = () => selectAnswer(i, btn);
-    optList.appendChild(btn);
-  });
-
-  // Timer
-  clearInterval(currentQuiz.timer);
-  if (currentQuiz.isMock) {
-    // countdown from 7200s total
-    updateMockTimer();
-    currentQuiz.timer = setInterval(()=>{
-      currentQuiz.timeLeft--;
-      updateMockTimer();
-      if (currentQuiz.timeLeft<=0) { clearInterval(currentQuiz.timer); showResult(); }
-    }, 1000);
-  } else if (currentQuiz.mode==='timed') {
-    currentQuiz.timeLeft = 30;
-    updateTimer();
-    currentQuiz.timer = setInterval(()=>{
-      currentQuiz.timeLeft--;
-      updateTimer();
-      if (currentQuiz.timeLeft<=0) {
-        clearInterval(currentQuiz.timer);
-        // auto-move with no answer
-        document.querySelectorAll('.option-btn').forEach(b=>b.disabled=true);
-        document.getElementById('btn-next').disabled = false;
-        const correct = currentQuiz.questions[currentQuiz.index].ans;
-        document.querySelectorAll('.option-btn')[correct].classList.add('correct');
-      }
-    }, 1000);
-  } else {
-    document.getElementById('timer-display').textContent = '∞';
-  }
-}
-
-function updateTimer() {
-  const t = currentQuiz.timeLeft;
-  const el = document.getElementById('timer-display');
-  el.textContent = t + 's';
-  el.classList.toggle('urgent', t<=10);
-}
-
-function updateMockTimer() {
-  const t = currentQuiz.timeLeft;
-  const m = Math.floor(t/60), s = t%60;
-  document.getElementById('timer-display').textContent = `${m}:${s.toString().padStart(2,'0')}`;
-}
-
-function selectAnswer(idx, btn) {
-  clearInterval(currentQuiz.timer);
-  const q = currentQuiz.questions[currentQuiz.index];
-  document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
-  if (idx === q.ans) {
-    btn.classList.add('correct');
-    currentQuiz.score++;
-  } else {
-    btn.classList.add('wrong');
-    document.querySelectorAll('.option-btn')[q.ans].classList.add('correct');
-  }
-  document.getElementById('explanation-box').classList.add('show');
-  document.getElementById('btn-next').disabled = false;
-}
-
-function nextQuestion() {
-  currentQuiz.index++;
-  if (currentQuiz.index >= currentQuiz.questions.length) {
-    clearInterval(currentQuiz.timer);
-    showResult();
-  } else {
-    renderQuestion();
-  }
-}
-
-function showResult() {
-  clearInterval(currentQuiz.timer);
-  const score = currentQuiz.score;
-  const total = currentQuiz.questions.length;
-  const pct = Math.round(score/total*100);
-
-  document.getElementById('result-score').textContent = score;
-  document.getElementById('result-total').textContent = `out of ${total}`;
-
-  let emoji, title, sub;
-  if (pct>=80) { emoji='🎉'; title='Excellent!'; sub='You are ready for JAMB! 🔥'; }
-  else if (pct>=60) { emoji='👍'; title='Good Job!'; sub='Keep pushing, you are almost there!'; }
-  else if (pct>=40) { emoji='💪'; title='Keep Going!'; sub='Revise your notes and try again.'; }
-  else { emoji='📚'; title='Keep Studying!'; sub='Read your notes again and retry!'; }
-
-  document.getElementById('result-emoji').textContent = emoji;
-  document.getElementById('result-title').textContent = title;
-  document.getElementById('result-sub').textContent = sub;
-
-  // Update user stats
-  if (currentUser) {
-    currentUser.quizzes = (currentUser.quizzes||0) + 1;
-    currentUser.totalScore = (currentUser.totalScore||0) + pct;
-    const idx = users.findIndex(u=>u.email===currentUser.email);
-    if (idx>=0) users[idx] = currentUser;
-    localStorage.setItem('sg_users', JSON.stringify(users));
-    updateStats();
-  }
-
-  showScreen('quiz-result');
-}
-
-function retryQuiz() {
-  showScreen('quiz-active');
-  if (currentQuiz.isMock) startMockExam();
-  else startQuiz(currentQuiz.mode, currentQuiz.questions.length);
-}
-
-function exitQuiz() {
-  clearInterval(currentQuiz.timer);
-  showApp();
-  showTab('home');
-}
-
-// ============================
-// BOOKMARKS
-// ============================
-function bookmarkCurrent() {
-  const q = currentQuiz.questions[currentQuiz.index];
-  const already = bookmarks.find(b=>b.q===q.q);
-  if (already) { alert('Already bookmarked!'); return; }
-  bookmarks.push({ subject:currentQuiz.subject, q:q.q, ans:q.opts[q.ans], exp:q.exp });
-  localStorage.setItem('sg_bookmarks', JSON.stringify(bookmarks));
-  document.getElementById('bookmark-btn').textContent = '✅';
-  setTimeout(()=>document.getElementById('bookmark-btn').textContent='🔖', 1500);
-}
-
-function loadBookmarks() {
-  const el = document.getElementById('bookmarks-list');
-  if (bookmarks.length===0) {
-    el.innerHTML = '<div class="empty-state"><div class="es-icon">🔖</div><p>No bookmarks yet.<br>Bookmark questions during a quiz!</p></div>';
-    return;
-  }
-  el.innerHTML = bookmarks.map((b,i)=>`
-    <div class="bookmark-item">
-      <div class="bm-subject">${b.subject}</div>
-      <div class="bm-q">${b.q}</div>
-      <div class="bm-ans">✅ ${b.ans}</div>
-      <div style="font-size:13px;color:var(--muted);margin-top:6px">${b.exp}</div>
-      <button class="bm-remove" onclick="removeBookmark(${i})">Remove 🗑️</button>
-    </div>
-  `).join('');
-}
-
-function removeBookmark(i) {
-  bookmarks.splice(i,1);
-  localStorage.setItem('sg_bookmarks', JSON.stringify(bookmarks));
-  loadBookmarks();
-}
-
-// ============================
-// NOTES
-// ============================
-function showNotes(subject, tabEl) {
-  document.querySelectorAll('.notes-tab').forEach(t=>t.classList.remove('active'));
-  if (tabEl) tabEl.classList.add('active');
-  const topics = NOTES[subject] || [];
-  document.getElementById('notes-content').innerHTML = topics.map((t,i)=>`
-    <div class="topic-item">
-      <div class="topic-header" onclick="toggleTopic(${i})">
-        <h3>${t.title}</h3>
-        <span id="arrow-${i}">▼</span>
-      </div>
-      <div class="topic-body" id="topic-body-${i}">${t.body}</div>
-    </div>
-  `).join('');
-}
-
-function toggleTopic(i) {
-  const body = document.getElementById('topic-body-'+i);
-  const arrow = document.getElementById('arrow-'+i);
-  body.classList.toggle('open');
-  arrow.textContent = body.classList.contains('open') ? '▲' : '▼';
-}
-
-// ============================
-// LEADERBOARD
-// ============================
-function loadLeaderboard() {
-  const sorted = [...users].sort((a,b)=>{
-    const avgA = a.quizzes>0?a.totalScore/a.quizzes:0;
-    const avgB = b.quizzes>0?b.totalScore/b.quizzes:0;
-    return avgB-avgA;
-  });
-
-  // Add demo entries if less than 5
-  const demo = [
-    {name:'Amaka O.',totalScore:850,quizzes:10},
-    {name:'Emeka C.',totalScore:780,quizzes:10},
-    {name:'Fatima A.',totalScore:720,quizzes:10},
-    {name:'Tunde B.',totalScore:650,quizzes:10},
-    {name:'Ngozi E.',totalScore:600,quizzes:10},
-  ];
-  const combined = [...sorted, ...demo].slice(0,10);
-
-  const ranks = ['🥇','🥈','🥉'];
-  const rankClass = ['gold','silver','bronze'];
-  document.getElementById('lb-list').innerHTML = combined.map((u,i)=>{
-    const avg = u.quizzes>0 ? Math.round(u.totalScore/u.quizzes) : 0;
-    const isMe = currentUser && u.email===currentUser.email;
-    return `<div class="lb-item ${isMe?'me':''}">
-      <div class="lb-rank ${rankClass[i]||''}">${ranks[i]||i+1}</div>
-      <div class="lb-name">${u.name} ${isMe?'(You)':''}</div>
-      <div class="lb-score">${avg}%</div>
-    </div>`;
-  }).join('');
-}
-
-// ============================
-// PROFILE
-// ============================
-function loadProfile() {
-  if (!currentUser) return;
-  document.getElementById('profile-avatar').textContent = currentUser.name[0].toUpperCase();
-  document.getElementById('profile-name-display').textContent = currentUser.name;
-  document.getElementById('profile-role-display').textContent = currentUser.role==='parent' ? '👨‍👩‍👧 Parent' : '🎓 UTME Candidate';
-  updateStats();
-  if (currentUser.role==='parent') {
-    document.getElementById('parent-section').style.display = 'block';
-    document.getElementById('child-name-display').textContent = currentUser.child || 'Your Child';
-  }
-}
-
-// ============================
-// DARK MODE
-// ============================
-function toggleDark() {
-  isDark = !isDark;
-  document.body.classList.toggle('light', !isDark);
-  document.getElementById('dark-btn').textContent = isDark ? '🌙' : '☀️';
-  const toggle = document.getElementById('dark-toggle');
-  if (toggle) toggle.classList.toggle('on', isDark);
-}
-
-// ============================
-// INIT
-// ============================
-showNotes('English', null);
-</script>
 </body>
 </html>
