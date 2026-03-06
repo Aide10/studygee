@@ -258,7 +258,7 @@ h1,h2,h3,.brand{font-family:'Syne',sans-serif;}
 <div id="toast"></div>
 
 <!-- SPLASH -->
-<div id="splash" class="active">
+<div id="splash">
   <div class="splash-logo">Study<span>Gee</span></div>
   <div class="splash-tag">Your JAMB Plug</div>
   <button class="splash-btn" onclick="showAuth()">Get Started 🚀</button>
@@ -708,6 +708,9 @@ let bookmarks=JSON.parse(localStorage.getItem('sg_bm')||'[]');
 let QZ={qs:[],idx:0,score:0,earned:0,mode:'practice',tmr:null,tLeft:30,isMock:false,subject:'',topicIdx:-1};
 
 // ── AUTH ──────────────────────────────────────────────
+// Show splash immediately — don't wait for Firebase
+show('splash');
+
 onAuthStateChanged(auth,async u=>{
   if(u){CU=u;await loadUD();bootApp();}
   else{CU=null;UD=null;show('splash');}
