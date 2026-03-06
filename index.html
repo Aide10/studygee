@@ -1281,7 +1281,10 @@ const DEFAULT_TOPICS={
     ...Array.from({length:8},(_,i)=>({id:`eng-${i+2}`,name:`Topic ${i+3}`,notes:'',videoUrl:'',questions:[]}))
   ],
   Biology:Array.from({length:10},(_,i)=>({id:`bio-${i}`,name:`Topic ${i+1}`,notes:'',videoUrl:'',questions:[]})),
-  Chemistry:Array.from({length:10},(_,i)=>({id:`chem-${i}`,name:`Topic ${i+1}`,notes:'',videoUrl:'',questions:[]})),
+  Chemistry:[
+    {id:'chem-0',name:'Alloys',notes:'',videoUrl:'https://youtu.be/auCotqkQp9A',questions:[]},
+    ...Array.from({length:9},(_,i)=>({id:`chem-${i+1}`,name:`Topic ${i+2}`,notes:'',videoUrl:'',questions:[]}))
+  ],
   Physics:Array.from({length:10},(_,i)=>({id:`phy-${i}`,name:`Topic ${i+1}`,notes:'',videoUrl:'',questions:[]})),
 };
 
