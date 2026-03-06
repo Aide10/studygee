@@ -179,11 +179,15 @@ h1,h2,h3,.brand{font-family:'Syne',sans-serif;}
 /* TOPIC DETAIL */
 .section-card{background:var(--card);border-radius:14px;padding:16px;border:1px solid var(--border);margin-bottom:16px;}
 .section-card-title{font-size:15px;font-weight:700;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;}
-.notes-text{font-size:14px;line-height:1.8;color:var(--text);white-space:pre-wrap;}
+.notes-text{font-size:14px;line-height:1.9;color:var(--text);padding:14px 16px;background:rgba(0,212,170,0.04);border-radius:10px;border-left:3px solid var(--accent);}
+.notes-text u{text-decoration:underline;}
+.notes-text strong{color:var(--accent2);}
+.notes-text em{color:var(--muted);font-style:italic;}
 .acc-body{display:block;overflow:hidden;}
 .acc-body.collapsed{display:none;}
 .acc-chevron{font-size:18px;transition:transform 0.3s;display:inline-block;}
 .acc-chevron.collapsed{transform:rotate(-90deg);}
+.sg-hidden{display:none!important;}
 .notes-empty{font-size:14px;color:var(--muted);font-style:italic;}
 .video-frame{width:100%;border-radius:12px;aspect-ratio:16/9;border:none;margin-top:10px;}
 .action-btn{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:16px;cursor:pointer;display:flex;align-items:center;gap:14px;color:var(--text);margin-bottom:10px;width:100%;text-align:left;}
@@ -446,7 +450,7 @@ h1,h2,h3,.brand{font-family:'Syne',sans-serif;}
   </div>
   <div class="overlay-body">
     <!-- VIDEO SECTION (first) -->
-    <div id="video-section" class="section-card" style="display:none">
+    <div id="video-section" class="section-card sg-hidden">
       <div class="section-card-title" onclick="toggleSection('video-body','video-chevron')" style="cursor:pointer;user-select:none;padding:4px 0;">
         <span>🎥 Video Lesson</span>
         <span id="video-chevron" class="acc-chevron">▾</span>
@@ -464,7 +468,7 @@ h1,h2,h3,.brand{font-family:'Syne',sans-serif;}
       </div>
     </div>
     <!-- STUDY NOTES SECTION (second) -->
-    <div class="section-card">
+    <div id="notes-section" class="section-card">
       <div class="section-card-title" onclick="toggleSection('notes-body','notes-chevron')" style="cursor:pointer;user-select:none;padding:4px 0;">
         <span>📝 Study Notes</span>
         <span id="notes-chevron" class="acc-chevron">▾</span>
@@ -1457,7 +1461,14 @@ window.openTopic=idx=>{
   const nd=document.getElementById('topic-notes-display');
   if(t.notes&&t.notes.trim()){
     nd.className='notes-text';
-    nd.textContent=t.notes;
+    // Convert plain text formatting to HTML
+    let html=t.notes
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/__(.*?)__/g,'<u>$1</u>')
+      .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g,'<em>$1</em>')
+      .split('\n').join('<br>');
+    nd.innerHTML=html;
   }else{
     nd.className='notes-empty';
     nd.textContent='No notes added yet for this topic.';
@@ -1469,19 +1480,19 @@ window.openTopic=idx=>{
     const vid=ytId(t.videoUrl);
     if(vid){
       document.getElementById('video-thumb-img').src=`https://img.youtube.com/vi/${vid}/hqdefault.jpg`;
-      vs.style.display='block';
+      vs.classList.remove('sg-hidden');
       vs.dataset.url=t.videoUrl;
-    }else{vs.style.display='none';}
-  }else{vs.style.display='none';}
+    }else{vs.classList.add('sg-hidden');}
+  }else{vs.classList.add('sg-hidden');}
 
   // Reset accordion to open state every time
   ['notes-body','video-body'].forEach(id=>{
     const el=document.getElementById(id);
-    if(el){el.style.display='block';el.classList.remove('collapsed');}
+    if(el){el.style.display='block';}
   });
   ['notes-chevron','video-chevron'].forEach(id=>{
     const el=document.getElementById(id);
-    if(el){el.classList.remove('collapsed');}
+    if(el){el.style.transform='rotate(0deg)';}
   });
   openOverlay('topic-overlay');
 };
