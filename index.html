@@ -3,851 +3,199 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="StudyGee - Your JAMB Plug. Study smarter, pass UTME.">
 <meta name="theme-color" content="#0a1628">
 <title>StudyGee — Your JAMB Plug</title>
-<link rel="manifest" href="manifest.json" />
+<link rel="manifest" href="manifest.json"/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-  import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyB9gAdr3oFyxu7K_zYhCcGrsxuZY2Pt9Bs",
-    authDomain: "studygee-28943.firebaseapp.com",
-    projectId: "studygee-28943",
-    storageBucket: "studygee-28943.firebasestorage.app",
-    messagingSenderId: "253358407287",
-    appId: "1:253358407287:web:372ea73e4363d695065072"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-
-  // ============================
-  // DATA
-  // ============================
-  const QUESTIONS = {
-    English: [
-      { q:"Choose the word closest in meaning to 'Eloquent'", opts:["Fluent","Silent","Confused","Angry"], ans:0, exp:"Eloquent means having or exercising the power of fluent, forceful, and appropriate speech." },
-      { q:"Identify the figure of speech: 'The pen is mightier than the sword'", opts:["Simile","Metaphor","Personification","Hyperbole"], ans:1, exp:"This is a metaphor — it compares two things without using 'like' or 'as'." },
-      { q:"Which of these sentences is grammatically correct?", opts:["She don't like him","He doesn't likes it","They don't agree","We doesn't know"], ans:2, exp:"'They don't agree' is correct. 'Don't' is used with plural subjects." },
-      { q:"Choose the antonym of 'Verbose'", opts:["Wordy","Concise","Talkative","Fluent"], ans:1, exp:"Verbose means using more words than needed. Concise is the opposite — brief and to the point." },
-      { q:"In comprehension, a 'topic sentence' is:", opts:["The last sentence","The main idea of a paragraph","A question","A conclusion"], ans:1, exp:"A topic sentence states the main idea of a paragraph, usually appearing at the beginning." },
-      { q:"Choose the correct plural of 'criterion'", opts:["Criterions","Criterias","Criteria","Criterion"], ans:2, exp:"'Criteria' is the correct plural of 'criterion' — it is a Latin-origin word." },
-      { q:"Which punctuation ends an exclamatory sentence?", opts:[".","?","!",","], ans:2, exp:"An exclamatory sentence expresses strong emotion and ends with an exclamation mark (!)." },
-      { q:"'He gave me a fat cheque' — fat is used as:", opts:["Noun","Adverb","Adjective","Verb"], ans:2, exp:"'Fat' here describes the noun 'cheque', so it is an adjective." },
-      { q:"Choose the word that is misspelled:", opts:["Necessary","Accomodate","Beautiful","Occasion"], ans:1, exp:"The correct spelling is 'Accommodate' with double 'c' and double 'm'." },
-      { q:"A word that sounds like another but has different meaning is called:", opts:["Synonym","Antonym","Homophone","Metaphor"], ans:2, exp:"Homophones are words that sound the same but have different meanings, e.g. 'hear' and 'here'." },
-    ],
-    Biology: [
-      { q:"The powerhouse of the cell is the:", opts:["Nucleus","Mitochondria","Ribosome","Cell membrane"], ans:1, exp:"Mitochondria produce ATP (energy) through cellular respiration, earning the nickname 'powerhouse of the cell'." },
-      { q:"Which blood group is the universal donor?", opts:["A","B","AB","O"], ans:3, exp:"Blood group O negative is the universal donor because it lacks A, B, and Rh antigens." },
-      { q:"Photosynthesis takes place in the:", opts:["Mitochondria","Ribosome","Chloroplast","Vacuole"], ans:2, exp:"Chloroplasts contain chlorophyll and are where photosynthesis converts sunlight into glucose." },
-      { q:"DNA stands for:", opts:["Deoxyribonucleic Acid","Di-nitrogen Acid","Double Nitric Acid","None"], ans:0, exp:"DNA (Deoxyribonucleic Acid) is the molecule carrying genetic information in living organisms." },
-      { q:"The process by which plants lose water through leaves is:", opts:["Respiration","Transpiration","Osmosis","Diffusion"], ans:1, exp:"Transpiration is the evaporation of water from plant surfaces, mainly through stomata in leaves." },
-      { q:"Which organ produces insulin?", opts:["Liver","Kidney","Pancreas","Stomach"], ans:2, exp:"The pancreas produces insulin, which regulates blood glucose levels." },
-      { q:"Osmosis is the movement of water from:", opts:["High to low concentration","Low to high solute concentration","High solute to low solute","None"], ans:1, exp:"Osmosis is movement of water from low solute concentration to high solute concentration across a semi-permeable membrane." },
-      { q:"The basic unit of heredity is:", opts:["Cell","Gene","Chromosome","Nucleus"], ans:1, exp:"Genes are segments of DNA that carry hereditary information and are the basic unit of inheritance." },
-      { q:"Which part of the brain controls balance?", opts:["Cerebrum","Medulla","Cerebellum","Thalamus"], ans:2, exp:"The cerebellum coordinates movement, balance, and fine motor control." },
-      { q:"Anaerobic respiration produces:", opts:["CO2 and water","Lactic acid or ethanol","Only oxygen","Glucose"], ans:1, exp:"Without oxygen, cells produce lactic acid (in animals) or ethanol and CO2 (in yeast) through anaerobic respiration." },
-    ],
-    Chemistry: [
-      { q:"The atomic number of Carbon is:", opts:["6","12","8","14"], ans:0, exp:"Carbon has atomic number 6, meaning it has 6 protons in its nucleus." },
-      { q:"What is the chemical formula for water?", opts:["H2O2","HO","H2O","H3O"], ans:2, exp:"Water consists of 2 hydrogen atoms and 1 oxygen atom, giving the formula H2O." },
-      { q:"Which gas is produced when acid reacts with a metal?", opts:["Oxygen","Hydrogen","Carbon dioxide","Nitrogen"], ans:1, exp:"When metals react with acids, hydrogen gas is released. For example: Zn + H2SO4 → ZnSO4 + H2." },
-      { q:"The pH of a neutral solution is:", opts:["0","7","14","5"], ans:1, exp:"pH 7 is neutral. Below 7 is acidic, above 7 is alkaline/basic." },
-      { q:"Ionic bonds form between:", opts:["Two metals","Two non-metals","Metal and non-metal","Non-metal and gas"], ans:2, exp:"Ionic bonds form when a metal transfers electrons to a non-metal, creating oppositely charged ions." },
-      { q:"Which element is a noble gas?", opts:["Nitrogen","Chlorine","Argon","Oxygen"], ans:2, exp:"Argon is a noble gas (Group 18) — it has a full outer electron shell and is very unreactive." },
-      { q:"The process of a liquid turning to gas is called:", opts:["Condensation","Sublimation","Evaporation","Melting"], ans:2, exp:"Evaporation is the process by which a liquid converts to gas at temperatures below its boiling point." },
-      { q:"NaCl is the chemical formula for:", opts:["Sugar","Salt","Baking soda","Bleach"], ans:1, exp:"NaCl (Sodium Chloride) is common table salt, formed from Na+ and Cl- ions." },
-      { q:"Avogadro's number is approximately:", opts:["6.02 × 10²³","3.14 × 10²³","9.8 × 10²³","1.6 × 10¹⁹"], ans:0, exp:"Avogadro's number (6.02 × 10²³) is the number of atoms/molecules in one mole of a substance." },
-      { q:"Which type of reaction releases heat?", opts:["Endothermic","Exothermic","Electrolytic","Catalytic"], ans:1, exp:"Exothermic reactions release energy (heat) to the surroundings. Examples include combustion and neutralisation." },
-    ],
-    Physics: [
-      { q:"The SI unit of force is:", opts:["Joule","Watt","Newton","Pascal"], ans:2, exp:"The Newton (N) is the SI unit of force, defined as the force needed to accelerate 1 kg by 1 m/s²." },
-      { q:"Speed of light in vacuum is approximately:", opts:["3×10⁶ m/s","3×10⁸ m/s","3×10¹⁰ m/s","3×10⁴ m/s"], ans:1, exp:"The speed of light in vacuum is approximately 3×10⁸ m/s (300,000 km/s)." },
-      { q:"Which law states 'For every action there is an equal and opposite reaction'?", opts:["Newton's 1st Law","Newton's 2nd Law","Newton's 3rd Law","Ohm's Law"], ans:2, exp:"Newton's Third Law of Motion states that forces always come in equal and opposite pairs." },
-      { q:"The unit of electrical resistance is:", opts:["Ampere","Volt","Ohm","Watt"], ans:2, exp:"Resistance is measured in Ohms (Ω), named after Georg Simon Ohm." },
-      { q:"Which type of wave does not require a medium?", opts:["Sound","Water","Electromagnetic","Seismic"], ans:2, exp:"Electromagnetic waves (light, radio, X-rays) can travel through a vacuum — they don't need a medium." },
-      { q:"The formula for kinetic energy is:", opts:["mgh","½mv²","mv","Fd"], ans:1, exp:"Kinetic Energy = ½mv², where m is mass in kg and v is velocity in m/s." },
-      { q:"What happens to resistance when temperature increases?", opts:["Decreases","Stays same","Increases","Becomes zero"], ans:2, exp:"In most conductors, resistance increases with temperature as more electrons collide with vibrating ions." },
-      { q:"Pressure is defined as:", opts:["Force × Area","Force / Area","Mass × Gravity","Energy / Time"], ans:1, exp:"Pressure = Force ÷ Area. Its SI unit is Pascal (Pa), equivalent to N/m²." },
-      { q:"Which phenomenon explains the bending of light?", opts:["Reflection","Refraction","Diffraction","Dispersion"], ans:1, exp:"Refraction is the bending of light when it passes from one medium to another of different density." },
-      { q:"The acceleration due to gravity on Earth is approximately:", opts:["10 m/s²","9.8 m/s²","8.9 m/s²","12 m/s²"], ans:1, exp:"Standard gravitational acceleration on Earth's surface is 9.8 m/s² (often approximated as 10 m/s²)." },
-    ]
-  };
-
-  const NOTES = {
-    English: [
-      { title:"Parts of Speech", body:"There are 8 parts of speech: Noun (person/place/thing), Pronoun (replaces noun), Verb (action/being), Adjective (describes noun), Adverb (modifies verb/adjective), Preposition (shows relationship), Conjunction (joins clauses), Interjection (expresses emotion)." },
-      { title:"Figures of Speech", body:"Common figures in UTME: Simile (comparison using like/as), Metaphor (direct comparison), Personification (giving human traits to non-human things), Hyperbole (extreme exaggeration), Alliteration (repetition of consonant sounds), Onomatopoeia (word imitates sound), Irony (saying opposite of meaning)." },
-      { title:"Tenses", body:"Present Simple: I study. Present Continuous: I am studying. Past Simple: I studied. Future Simple: I will study. Present Perfect: I have studied. Past Perfect: I had studied. UTME commonly tests the difference between Present Perfect and Simple Past." },
-      { title:"Comprehension Tips", body:"For UTME comprehension: (1) Read questions FIRST before the passage. (2) Identify the main idea of each paragraph. (3) Look for contextual clues for unfamiliar words. (4) Never choose answers not supported by the text." },
-    ],
-    Biology: [
-      { title:"Cell Biology", body:"All living things are made of cells. Animal cells have: cell membrane, nucleus, cytoplasm, mitochondria, ribosomes. Plant cells additionally have: cell wall (cellulose), chloroplasts, large central vacuole. Prokaryotic cells (bacteria) have no nucleus." },
-      { title:"Genetics & Heredity", body:"DNA carries genetic information in sequences called genes. Humans have 46 chromosomes (23 pairs). Dominant alleles (uppercase) mask recessive alleles (lowercase). Gregor Mendel is the father of genetics. Key ratios: 3:1 (monohybrid), 9:3:3:1 (dihybrid)." },
-      { title:"Photosynthesis", body:"Equation: 6CO₂ + 6H₂O + light energy → C₆H₁₂O₆ + 6O₂. Occurs in chloroplasts. Two stages: Light reactions (in thylakoid) and Calvin Cycle (in stroma). Factors affecting rate: light intensity, CO₂ concentration, temperature, water availability." },
-      { title:"Human Systems", body:"Digestive: Mouth → Oesophagus → Stomach → Small intestine → Large intestine. Circulatory: Heart pumps blood. Respiratory: O₂ in, CO₂ out via lungs. Nervous: Brain + spinal cord (CNS), nerves (PNS). Excretory: Kidneys filter blood, produce urine." },
-    ],
-    Chemistry: [
-      { title:"Atomic Structure", body:"Atoms have: protons (+, in nucleus), neutrons (0, in nucleus), electrons (-, orbit nucleus). Atomic number = number of protons. Mass number = protons + neutrons. Isotopes: same atomic number, different mass numbers." },
-      { title:"Periodic Table", body:"Elements arranged by increasing atomic number. Groups (vertical) have same number of outer electrons. Periods (horizontal) show number of electron shells. Group 1 = Alkali metals. Group 7 = Halogens. Group 8/0 = Noble gases (unreactive)." },
-      { title:"Chemical Bonding", body:"Ionic bond: metal gives electrons to non-metal. High melting points. Conducts when dissolved. Covalent bond: non-metals share electrons. Can be single, double, or triple bonds. Metallic bond: metal atoms share sea of electrons — explains conductivity." },
-      { title:"Acids, Bases & Salts", body:"Acids: pH < 7, turn blue litmus red. Common acids: HCl, H₂SO₄, HNO₃. Bases: pH > 7, turn red litmus blue. Neutralisation: Acid + Base → Salt + Water. Indicators: Litmus, Phenolphthalein, Methyl orange." },
-    ],
-    Physics: [
-      { title:"Newton's Laws of Motion", body:"1st Law (Inertia): A body stays at rest or uniform motion unless acted upon by a force. 2nd Law: F = ma. 3rd Law: Every action has equal and opposite reaction. Weight = mg, momentum = mv, impulse = Ft." },
-      { title:"Electricity & Circuits", body:"Ohm's Law: V = IR. Series circuit: same current, voltages add. Parallel circuit: same voltage, currents add. Power: P = IV = I²R. Resistors in series: R_total = R₁+R₂. In parallel: 1/R_total = 1/R₁ + 1/R₂." },
-      { title:"Waves & Light", body:"Transverse waves: vibration perpendicular to motion (light). Longitudinal waves: vibration parallel (sound). Key terms: Wavelength (λ), Frequency (f), Speed (v = fλ). Light: Reflection (angle in = angle out), Refraction (bending due to speed change)." },
-      { title:"Energy & Work", body:"Work = Force × Distance (Joules). Kinetic Energy = ½mv². Potential Energy = mgh. Conservation of Energy: Energy cannot be created or destroyed. Power = Work ÷ Time (Watts). Efficiency = (useful output ÷ total input) × 100%." },
-    ]
-  };
-
-  const QUOTES = [
-    { q:"Success is not final, failure is not fatal — it is the courage to continue that counts.", a:"Winston Churchill" },
-    { q:"Education is the most powerful weapon which you can use to change the world.", a:"Nelson Mandela" },
-    { q:"The secret of getting ahead is getting started.", a:"Mark Twain" },
-    { q:"Don't watch the clock; do what it does — keep going.", a:"Sam Levenson" },
-    { q:"Believe you can and you're halfway there.", a:"Theodore Roosevelt" },
-    { q:"Hard work beats talent when talent doesn't work hard.", a:"Tim Notke" },
-    { q:"The future belongs to those who believe in the beauty of their dreams.", a:"Eleanor Roosevelt" },
-    { q:"You are braver than you believe, stronger than you seem.", a:"A.A. Milne" },
-  ];
-
-  // ============================
-  // STATE
-  // ============================
-  let currentUser = null;
-  let userData = null;
-  let currentQuiz = { subject:'', questions:[], index:0, score:0, mode:'practice', timer:null, timeLeft:30, isMock:false };
-  let bookmarks = JSON.parse(localStorage.getItem('sg_bookmarks') || '[]');
-  let isDark = true;
-  let selectedSubject = '';
-
-  // ============================
-  // AUTH STATE LISTENER
-  // ============================
-  onAuthStateChanged(auth, async (user) => {
-    if (user) {
-      currentUser = user;
-      await loadUserData();
-      showApp();
-    } else {
-      currentUser = null;
-      userData = null;
-      showScreen('auth');
-    }
-  });
-
-  // ============================
-  // SCREENS
-  // ============================
-  window.showScreen = function(id) {
-    document.querySelectorAll('.screen, #quiz-active, #quiz-result').forEach(s => {
-      s.classList.remove('active','show');
-    });
-    const el = document.getElementById(id);
-    if (el.classList.contains('screen')) el.classList.add('active');
-    else el.classList.add('show');
-  }
-
-  function showApp() {
-    showScreen('app');
-    updateGreeting();
-    loadDailyQuote();
-    updateStats();
-    showNotes('English', document.querySelector('.notes-tab'));
-    loadLeaderboard();
-    loadBookmarks();
-    loadProfile();
-  }
-
-  // ============================
-  // AUTH
-  // ============================
-  window.switchAuthTab = function(tab) {
-    document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active', (i===0&&tab==='login')||(i===1&&tab==='register')));
-    document.getElementById('login-form').style.display = tab==='login'?'flex':'none';
-    document.getElementById('register-form').style.display = tab==='register'?'flex':'none';
-  }
-
-  document.getElementById('reg-role').addEventListener('change', function() {
-    document.getElementById('reg-child').style.display = this.value==='parent'?'block':'none';
-  });
-
-  window.doRegister = async function() {
-    const name = document.getElementById('reg-name').value.trim();
-    const email = document.getElementById('reg-email').value.trim();
-    const pass = document.getElementById('reg-pass').value;
-    const role = document.getElementById('reg-role').value;
-    const child = document.getElementById('reg-child').value.trim();
-    if (!name||!email||!pass) { showToast('Please fill all fields'); return; }
-    try {
-      showLoading(true);
-      const cred = await createUserWithEmailAndPassword(auth, email, pass);
-      await setDoc(doc(db, 'users', cred.user.uid), {
-        name, email, role, child: child||'',
-        quizzes: 0, totalScore: 0, streak: 0,
-        subjectScores: { English:0, Biology:0, Chemistry:0, Physics:0 },
-        subjectAttempts: { English:0, Biology:0, Chemistry:0, Physics:0 },
-        createdAt: new Date().toISOString()
-      });
-      showLoading(false);
-    } catch(e) {
-      showLoading(false);
-      showToast(e.message.includes('email-already') ? 'Email already registered!' : 'Registration failed. Try again.');
-    }
-  }
-
-  window.doLogin = async function() {
-    const email = document.getElementById('login-email').value.trim();
-    const pass = document.getElementById('login-pass').value;
-    if (!email||!pass) { showToast('Please fill all fields'); return; }
-    try {
-      showLoading(true);
-      await signInWithEmailAndPassword(auth, email, pass);
-      showLoading(false);
-    } catch(e) {
-      showLoading(false);
-      showToast('Invalid email or password');
-    }
-  }
-
-  window.doLogout = async function() {
-    await signOut(auth);
-  }
-
-  async function loadUserData() {
-    if (!currentUser) return;
-    const snap = await getDoc(doc(db, 'users', currentUser.uid));
-    if (snap.exists()) userData = snap.data();
-  }
-
-  async function saveUserData() {
-    if (!currentUser || !userData) return;
-    await setDoc(doc(db, 'users', currentUser.uid), userData, { merge: true });
-  }
-
-  // ============================
-  // HOME
-  // ============================
-  function updateGreeting() {
-    if (!userData) return;
-    const h = new Date().getHours();
-    const time = h<12?'Good morning ☀️':h<17?'Good afternoon 🌤️':'Good evening 🌙';
-    document.getElementById('greeting-text').textContent = time + ', ' + userData.name.split(' ')[0] + '!';
-    document.getElementById('greeting-name').textContent = 'Keep pushing — JAMB is waiting! 🇳🇬';
-  }
-
-  function loadDailyQuote() {
-    const q = QUOTES[new Date().getDay() % QUOTES.length];
-    document.getElementById('daily-quote').textContent = q.q;
-    document.getElementById('quote-author').textContent = '— ' + q.a;
-  }
-
-  function updateStats() {
-    if (!userData) return;
-    const avg = userData.quizzes > 0 ? Math.round(userData.totalScore / userData.quizzes) : 0;
-    document.getElementById('stat-quizzes').textContent = userData.quizzes || 0;
-    document.getElementById('stat-avg').textContent = avg + '%';
-    document.getElementById('ps-quizzes').textContent = userData.quizzes || 0;
-    document.getElementById('ps-avg').textContent = avg + '%';
-    document.getElementById('ps-streak').textContent = (userData.streak||0) + '🔥';
-  }
-
-  // ============================
-  // TABS
-  // ============================
-  window.showTab = function(tab) {
-    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    document.getElementById('tab-'+tab).classList.add('active');
-    const navEl = document.getElementById('nav-'+tab);
-    if (navEl) navEl.classList.add('active');
-    if (tab==='bookmarks') loadBookmarks();
-    if (tab==='profile') loadProfile();
-    if (tab==='leaderboard') loadLeaderboard();
-  }
-
-  window.goToQuiz = function(subject) {
-    showTab('quiz');
-    selectSubjectForQuiz(subject);
-  }
-
-  // ============================
-  // QUIZ
-  // ============================
-  window.selectSubjectForQuiz = function(subject) {
-    selectedSubject = subject;
-    document.getElementById('quiz-mode-subject-title').textContent = '📚 ' + subject + ' — Choose Mode';
-    document.getElementById('quiz-mode-select').style.display = 'block';
-  }
-
-  function shuffle(arr) { return [...arr].sort(()=>Math.random()-0.5); }
-
-  window.startQuiz = function(mode, count) {
-    const qs = shuffle(QUESTIONS[selectedSubject]).slice(0, count);
-    currentQuiz = { subject:selectedSubject, questions:qs, index:0, score:0, mode, timer:null, timeLeft:30, isMock:false };
-    showScreen('quiz-active');
-    renderQuestion();
-  }
-
-  window.startMockExam = function() {
-    const qs = [
-      ...shuffle(QUESTIONS.English).slice(0,10),
-      ...shuffle(QUESTIONS.Biology).slice(0,10),
-      ...shuffle(QUESTIONS.Chemistry).slice(0,10),
-      ...shuffle(QUESTIONS.Physics).slice(0,10),
-    ];
-    currentQuiz = { subject:'Mock Exam', questions:qs, index:0, score:0, mode:'timed', timer:null, timeLeft:7200, isMock:true };
-    showScreen('quiz-active');
-    renderQuestion();
-  }
-
-  function renderQuestion() {
-    const q = currentQuiz.questions[currentQuiz.index];
-    const total = currentQuiz.questions.length;
-    const idx = currentQuiz.index;
-    document.getElementById('q-counter').textContent = `Q ${idx+1}/${total}`;
-    document.getElementById('q-subject-badge').textContent = currentQuiz.subject;
-    document.getElementById('q-progress').style.width = ((idx+1)/total*100) + '%';
-    document.getElementById('q-meta').textContent = `Question ${idx+1} of ${total}`;
-    document.getElementById('q-text').textContent = q.q;
-    document.getElementById('explanation-box').textContent = q.exp;
-    document.getElementById('explanation-box').classList.remove('show');
-    document.getElementById('btn-next').disabled = true;
-    document.getElementById('bookmark-btn').textContent = '🔖';
-
-    const optList = document.getElementById('options-list');
-    optList.innerHTML = '';
-    ['A','B','C','D'].forEach((letter, i) => {
-      const btn = document.createElement('button');
-      btn.className = 'option-btn';
-      btn.innerHTML = `<span class="opt-letter">${letter}</span>${q.opts[i]}`;
-      btn.onclick = () => selectAnswer(i, btn);
-      optList.appendChild(btn);
-    });
-
-    clearInterval(currentQuiz.timer);
-    if (currentQuiz.isMock) {
-      updateMockTimer();
-      currentQuiz.timer = setInterval(()=>{
-        currentQuiz.timeLeft--;
-        updateMockTimer();
-        if (currentQuiz.timeLeft<=0) { clearInterval(currentQuiz.timer); showResult(); }
-      }, 1000);
-    } else if (currentQuiz.mode==='timed') {
-      currentQuiz.timeLeft = 30;
-      updateTimer();
-      currentQuiz.timer = setInterval(()=>{
-        currentQuiz.timeLeft--;
-        updateTimer();
-        if (currentQuiz.timeLeft<=0) {
-          clearInterval(currentQuiz.timer);
-          document.querySelectorAll('.option-btn').forEach(b=>b.disabled=true);
-          document.getElementById('btn-next').disabled = false;
-          document.querySelectorAll('.option-btn')[currentQuiz.questions[currentQuiz.index].ans].classList.add('correct');
-        }
-      }, 1000);
-    } else {
-      document.getElementById('timer-display').textContent = '∞';
-    }
-  }
-
-  function updateTimer() {
-    const t = currentQuiz.timeLeft;
-    const el = document.getElementById('timer-display');
-    el.textContent = t + 's';
-    el.classList.toggle('urgent', t<=10);
-  }
-
-  function updateMockTimer() {
-    const t = currentQuiz.timeLeft;
-    const m = Math.floor(t/60), s = t%60;
-    document.getElementById('timer-display').textContent = `${m}:${s.toString().padStart(2,'0')}`;
-  }
-
-  window.selectAnswer = function(idx, btn) {
-    clearInterval(currentQuiz.timer);
-    const q = currentQuiz.questions[currentQuiz.index];
-    document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
-    if (idx === q.ans) {
-      btn.classList.add('correct');
-      currentQuiz.score++;
-    } else {
-      btn.classList.add('wrong');
-      document.querySelectorAll('.option-btn')[q.ans].classList.add('correct');
-    }
-    document.getElementById('explanation-box').classList.add('show');
-    document.getElementById('btn-next').disabled = false;
-  }
-
-  window.nextQuestion = function() {
-    currentQuiz.index++;
-    if (currentQuiz.index >= currentQuiz.questions.length) {
-      clearInterval(currentQuiz.timer);
-      showResult();
-    } else {
-      renderQuestion();
-    }
-  }
-
-  async function showResult() {
-    clearInterval(currentQuiz.timer);
-    const score = currentQuiz.score;
-    const total = currentQuiz.questions.length;
-    const pct = Math.round(score/total*100);
-
-    document.getElementById('result-score').textContent = score;
-    document.getElementById('result-total').textContent = `out of ${total}`;
-
-    let emoji, title, sub;
-    if (pct>=80) { emoji='🎉'; title='Excellent!'; sub='You are ready for JAMB! 🔥'; }
-    else if (pct>=60) { emoji='👍'; title='Good Job!'; sub='Keep pushing, you are almost there!'; }
-    else if (pct>=40) { emoji='💪'; title='Keep Going!'; sub='Revise your notes and try again.'; }
-    else { emoji='📚'; title='Keep Studying!'; sub='Read your notes again and retry!'; }
-
-    document.getElementById('result-emoji').textContent = emoji;
-    document.getElementById('result-title').textContent = title;
-    document.getElementById('result-sub').textContent = sub;
-
-    // Save to Firebase
-    if (userData) {
-      userData.quizzes = (userData.quizzes||0) + 1;
-      userData.totalScore = (userData.totalScore||0) + pct;
-      // Update subject scores
-      if (!currentQuiz.isMock && currentQuiz.subject !== 'Mock Exam') {
-        const subj = currentQuiz.subject;
-        if (!userData.subjectScores) userData.subjectScores = {};
-        if (!userData.subjectAttempts) userData.subjectAttempts = {};
-        userData.subjectScores[subj] = (userData.subjectScores[subj]||0) + pct;
-        userData.subjectAttempts[subj] = (userData.subjectAttempts[subj]||0) + 1;
-      }
-      await saveUserData();
-      updateStats();
-    }
-
-    showScreen('quiz-result');
-  }
-
-  window.retryQuiz = function() {
-    showScreen('quiz-active');
-    if (currentQuiz.isMock) startMockExam();
-    else startQuiz(currentQuiz.mode, currentQuiz.questions.length);
-  }
-
-  window.exitQuiz = function() {
-    clearInterval(currentQuiz.timer);
-    showApp();
-    showTab('home');
-  }
-
-  // ============================
-  // BOOKMARKS
-  // ============================
-  window.bookmarkCurrent = function() {
-    const q = currentQuiz.questions[currentQuiz.index];
-    const already = bookmarks.find(b=>b.q===q.q);
-    if (already) { showToast('Already bookmarked!'); return; }
-    bookmarks.push({ subject:currentQuiz.subject, q:q.q, ans:q.opts[q.ans], exp:q.exp });
-    localStorage.setItem('sg_bookmarks', JSON.stringify(bookmarks));
-    document.getElementById('bookmark-btn').textContent = '✅';
-    showToast('Bookmarked! 🔖');
-  }
-
-  function loadBookmarks() {
-    const el = document.getElementById('bookmarks-list');
-    if (bookmarks.length===0) {
-      el.innerHTML = '<div class="empty-state"><div class="es-icon">🔖</div><p>No bookmarks yet.<br>Bookmark questions during a quiz!</p></div>';
-      return;
-    }
-    el.innerHTML = bookmarks.map((b,i)=>`
-      <div class="bookmark-item">
-        <div class="bm-subject">${b.subject}</div>
-        <div class="bm-q">${b.q}</div>
-        <div class="bm-ans">✅ ${b.ans}</div>
-        <div style="font-size:13px;color:var(--muted);margin-top:6px">${b.exp}</div>
-        <button class="bm-remove" onclick="removeBookmark(${i})">Remove 🗑️</button>
-      </div>
-    `).join('');
-  }
-
-  window.removeBookmark = function(i) {
-    bookmarks.splice(i,1);
-    localStorage.setItem('sg_bookmarks', JSON.stringify(bookmarks));
-    loadBookmarks();
-  }
-
-  // ============================
-  // NOTES
-  // ============================
-  window.showNotes = function(subject, tabEl) {
-    document.querySelectorAll('.notes-tab').forEach(t=>t.classList.remove('active'));
-    if (tabEl) tabEl.classList.add('active');
-    const topics = NOTES[subject] || [];
-    document.getElementById('notes-content').innerHTML = topics.map((t,i)=>`
-      <div class="topic-item">
-        <div class="topic-header" onclick="toggleTopic(${i})">
-          <h3>${t.title}</h3>
-          <span id="arrow-${i}">▼</span>
-        </div>
-        <div class="topic-body" id="topic-body-${i}">${t.body}</div>
-      </div>
-    `).join('');
-  }
-
-  window.toggleTopic = function(i) {
-    const body = document.getElementById('topic-body-'+i);
-    const arrow = document.getElementById('arrow-'+i);
-    body.classList.toggle('open');
-    arrow.textContent = body.classList.contains('open') ? '▲' : '▼';
-  }
-
-  // ============================
-  // LEADERBOARD (REAL FIREBASE)
-  // ============================
-  async function loadLeaderboard() {
-    const el = document.getElementById('lb-list');
-    el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted)">Loading... ⏳</div>';
-    try {
-      const snap = await getDocs(collection(db, 'users'));
-      let users = [];
-      snap.forEach(d => users.push({id:d.id, ...d.data()}));
-      users = users
-        .filter(u => u.role === 'student')
-        .sort((a,b) => {
-          const avgA = a.quizzes>0 ? a.totalScore/a.quizzes : 0;
-          const avgB = b.quizzes>0 ? b.totalScore/b.quizzes : 0;
-          return avgB - avgA;
-        })
-        .slice(0, 10);
-
-      if (users.length === 0) {
-        el.innerHTML = '<div class="empty-state"><div class="es-icon">🏆</div><p>No students yet.<br>Be the first on the leaderboard!</p></div>';
-        return;
-      }
-
-      const ranks = ['🥇','🥈','🥉'];
-      const rankClass = ['gold','silver','bronze'];
-      el.innerHTML = users.map((u,i) => {
-        const avg = u.quizzes>0 ? Math.round(u.totalScore/u.quizzes) : 0;
-        const isMe = currentUser && u.id===currentUser.uid;
-        return `<div class="lb-item ${isMe?'me':''}">
-          <div class="lb-rank ${rankClass[i]||''}">${ranks[i]||i+1}</div>
-          <div class="lb-name">${u.name} ${isMe?'(You)':''}</div>
-          <div class="lb-score">${avg}%</div>
-        </div>`;
-      }).join('');
-    } catch(e) {
-      el.innerHTML = '<div class="empty-state"><div class="es-icon">📡</div><p>Could not load leaderboard.<br>Check your connection.</p></div>';
-    }
-  }
-
-  // ============================
-  // PROFILE
-  // ============================
-  async function loadProfile() {
-    if (!userData) return;
-    document.getElementById('profile-avatar').textContent = userData.name[0].toUpperCase();
-    document.getElementById('profile-name-display').textContent = userData.name;
-    document.getElementById('profile-role-display').textContent = userData.role==='parent' ? '👨‍👩‍👧 Parent' : '🎓 UTME Candidate';
-    updateStats();
-
-    if (userData.role === 'parent') {
-      document.getElementById('parent-section').style.display = 'block';
-      document.getElementById('child-name-display').textContent = userData.child || 'Your Child';
-      await loadChildProgress();
-    }
-  }
-
-  async function loadChildProgress() {
-    if (!userData || !userData.child) return;
-    try {
-      // Find child by name
-      const snap = await getDocs(collection(db, 'users'));
-      let child = null;
-      snap.forEach(d => {
-        const u = d.data();
-        if (u.name && u.name.toLowerCase() === userData.child.toLowerCase()) child = u;
-      });
-      if (!child) return;
-
-      const subjects = ['English','Biology','Chemistry','Physics'];
-      const ids = ['eng','bio','chem','phy'];
-      subjects.forEach((s,i) => {
-        const attempts = child.subjectAttempts?.[s] || 0;
-        const scores = child.subjectScores?.[s] || 0;
-        const avg = attempts > 0 ? Math.round(scores/attempts) : 0;
-        const el = document.getElementById('p-'+ids[i]);
-        const pb = document.getElementById('pb-'+ids[i]);
-        if (el) el.textContent = avg + '%';
-        if (pb) pb.style.width = avg + '%';
-      });
-    } catch(e) { console.log('Could not load child progress'); }
-  }
-
-  // ============================
-  // DARK MODE
-  // ============================
-  window.toggleDark = function() {
-    isDark = !isDark;
-    document.body.classList.toggle('light', !isDark);
-    document.getElementById('dark-btn').textContent = isDark ? '🌙' : '☀️';
-    const toggle = document.getElementById('dark-toggle');
-    if (toggle) toggle.classList.toggle('on', isDark);
-  }
-
-  // ============================
-  // HELPERS
-  // ============================
-  function showLoading(show) {
-    document.getElementById('loading-overlay').style.display = show ? 'flex' : 'none';
-  }
-
-  function showToast(msg) {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 3000);
-  }
-
-  window.showAuth = function() { showScreen('auth'); }
-
-  // Init notes
-  showNotes('English', null);
-</script>
 <style>
-  :root {
-    --bg:#0a1628;--bg2:#111e35;--bg3:#172544;--card:#1a2d50;
-    --accent:#00d4aa;--accent2:#f7c948;--accent3:#ff6b6b;
-    --text:#e8f0fe;--muted:#7a90b8;--border:#243455;
-    --success:#00d4aa;--danger:#ff6b6b;--radius:16px;
-    --shadow:0 8px 32px rgba(0,0,0,0.4);
-  }
-  .light{--bg:#f0f4ff;--bg2:#e4eaf8;--bg3:#d8e2f5;--card:#fff;--text:#0a1628;--muted:#5a6a8a;--border:#c8d4ee;}
-  *{margin:0;padding:0;box-sizing:border-box;}
-  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:background 0.3s,color 0.3s;}
-  h1,h2,h3,.brand{font-family:'Syne',sans-serif;}
-  .screen{display:none;min-height:100vh;}
-  .screen.active{display:flex;flex-direction:column;}
-
-  /* LOADING */
-  #loading-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:999;align-items:center;justify-content:center;flex-direction:column;gap:16px;}
-  .spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;}
-  @keyframes spin{to{transform:rotate(360deg)}}
-  #loading-overlay p{color:var(--text);font-size:14px;}
-
-  /* TOAST */
-  #toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--card);color:var(--text);padding:10px 20px;border-radius:50px;font-size:13px;font-weight:600;border:1px solid var(--border);opacity:0;transition:all 0.3s;z-index:500;pointer-events:none;white-space:nowrap;}
-  #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
-
-  /* SPLASH */
-  #splash{background:linear-gradient(135deg,#0a1628 0%,#0e2245 50%,#0a3060 100%);align-items:center;justify-content:center;text-align:center;padding:40px 20px;}
-  .splash-logo{font-size:52px;font-weight:800;color:var(--accent);letter-spacing:-2px;margin-bottom:8px;}
-  .splash-logo span{color:var(--accent2);}
-  .splash-tag{color:var(--muted);font-size:16px;margin-bottom:48px;letter-spacing:2px;text-transform:uppercase;}
-  .splash-btn{background:var(--accent);color:#0a1628;padding:16px 40px;border:none;border-radius:50px;font-size:17px;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer;transition:transform 0.2s,box-shadow 0.2s;box-shadow:0 4px 20px rgba(0,212,170,0.4);}
-  .splash-btn:hover{transform:translateY(-2px);}
-  .splash-dots{display:flex;gap:8px;justify-content:center;margin-top:48px;}
-  .splash-dots span{width:8px;height:8px;border-radius:50%;background:var(--accent);opacity:0.3;animation:pulse 1.5s infinite;}
-  .splash-dots span:nth-child(2){animation-delay:0.3s;}
-  .splash-dots span:nth-child(3){animation-delay:0.6s;}
-  @keyframes pulse{0%,100%{opacity:0.3}50%{opacity:1}}
-
-  /* AUTH */
-  #auth{background:var(--bg);padding:24px 20px;}
-  .auth-header{text-align:center;padding:40px 0 32px;}
-  .auth-header .brand{font-size:32px;color:var(--accent);font-weight:800;}
-  .auth-tabs{display:flex;background:var(--bg2);border-radius:12px;padding:4px;margin-bottom:24px;}
-  .auth-tab{flex:1;padding:10px;text-align:center;border-radius:10px;cursor:pointer;font-weight:600;font-size:14px;transition:all 0.2s;color:var(--muted);}
-  .auth-tab.active{background:var(--accent);color:#0a1628;}
-  .auth-form{display:flex;flex-direction:column;gap:14px;}
-  .auth-form input,.auth-form select{background:var(--bg2);border:1.5px solid var(--border);border-radius:12px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color 0.2s;}
-  .auth-form input:focus{border-color:var(--accent);}
-  .auth-form input::placeholder{color:var(--muted);}
-  .btn-primary{background:var(--accent);color:#0a1628;border:none;border-radius:12px;padding:15px;font-size:16px;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer;transition:all 0.2s;}
-  .auth-switch{text-align:center;color:var(--muted);font-size:14px;margin-top:8px;}
-  .auth-switch span{color:var(--accent);cursor:pointer;font-weight:600;}
-
-  /* APP */
-  #app{background:var(--bg);}
-  .topbar{background:var(--bg2);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;}
-  .topbar .brand{font-size:22px;color:var(--accent);font-weight:800;}
-  .topbar-actions{display:flex;gap:10px;align-items:center;}
-  .icon-btn{background:var(--bg3);border:none;border-radius:10px;padding:8px 10px;cursor:pointer;font-size:18px;color:var(--text);transition:background 0.2s;}
-  .content{padding:20px;flex:1;overflow-y:auto;}
-  .tab-content{display:none;}
-  .tab-content.active{display:block;}
-
-  /* HOME */
-  .greeting{margin-bottom:20px;}
-  .greeting h2{font-size:24px;font-weight:700;}
-  .greeting p{color:var(--muted);font-size:14px;margin-top:4px;}
-  .quote-card{background:linear-gradient(135deg,var(--accent) 0%,#00b894 100%);border-radius:var(--radius);padding:20px;margin-bottom:20px;color:#0a1628;}
-  .quote-card .q-icon{font-size:28px;margin-bottom:8px;}
-  .quote-card p{font-size:15px;font-weight:600;line-height:1.5;}
-  .quote-card span{font-size:12px;opacity:0.7;margin-top:6px;display:block;}
-  .stats-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
-  .stat-card{background:var(--card);border-radius:var(--radius);padding:16px;border:1px solid var(--border);}
-  .stat-card .stat-num{font-size:28px;font-weight:800;font-family:'Syne',sans-serif;color:var(--accent);}
-  .stat-card .stat-label{font-size:12px;color:var(--muted);margin-top:2px;}
-  .section-title{font-size:17px;font-weight:700;margin-bottom:12px;}
-  .subject-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
-  .subject-card{background:var(--card);border-radius:var(--radius);padding:18px 14px;border:1px solid var(--border);cursor:pointer;transition:all 0.2s;text-align:center;}
-  .subject-card:hover{border-color:var(--accent);transform:translateY(-2px);}
-  .subject-card .s-icon{font-size:30px;margin-bottom:8px;}
-  .subject-card .s-name{font-size:13px;font-weight:600;}
-  .subject-card .s-count{font-size:11px;color:var(--muted);margin-top:2px;}
-  .quick-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;}
-  .qa-btn{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);padding:16px;cursor:pointer;text-align:center;transition:all 0.2s;color:var(--text);}
-  .qa-btn:hover{border-color:var(--accent);}
-  .qa-btn .qa-icon{font-size:24px;margin-bottom:6px;}
-  .qa-btn .qa-label{font-size:13px;font-weight:600;display:block;}
-
-  /* BOTTOM NAV */
-  .bottom-nav{background:var(--bg2);border-top:1px solid var(--border);display:flex;padding:8px 0 16px;position:sticky;bottom:0;z-index:100;}
-  .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;padding:6px 0;color:var(--muted);font-size:10px;font-weight:600;border:none;background:none;}
-  .nav-item .nav-icon{font-size:22px;}
-  .nav-item.active{color:var(--accent);}
-
-  /* QUIZ */
-  .subject-select-list{display:flex;flex-direction:column;gap:10px;}
-  .subject-select-item{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);padding:16px 18px;cursor:pointer;display:flex;align-items:center;gap:14px;transition:all 0.2s;}
-  .subject-select-item:hover{border-color:var(--accent);}
-  .subject-select-item .si-icon{font-size:28px;}
-  .subject-select-item .si-info h3{font-size:15px;font-weight:600;}
-  .subject-select-item .si-info p{font-size:12px;color:var(--muted);}
-  .quiz-mode-btns{display:flex;flex-direction:column;gap:10px;margin-top:16px;}
-  .mode-btn{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);padding:18px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:14px;transition:all 0.2s;color:var(--text);}
-  .mode-btn:hover{border-color:var(--accent);}
-  .mode-btn .mb-icon{font-size:28px;}
-  .mode-btn .mb-info h3{font-size:15px;font-weight:600;font-family:'Syne',sans-serif;}
-  .mode-btn .mb-info p{font-size:12px;color:var(--muted);margin-top:2px;}
-  .back-btn{background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;display:flex;align-items:center;gap:6px;margin-bottom:16px;font-family:'DM Sans',sans-serif;padding:0;}
-
-  /* ACTIVE QUIZ */
-  #quiz-active{display:none;flex-direction:column;min-height:100vh;background:var(--bg);}
-  #quiz-active.show{display:flex;}
-  .quiz-header{background:var(--bg2);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);}
-  .quiz-progress{flex:1;margin:0 16px;}
-  .progress-bar{background:var(--bg3);border-radius:50px;height:6px;overflow:hidden;}
-  .progress-fill{background:var(--accent);height:100%;border-radius:50px;transition:width 0.4s;}
-  .timer-badge{background:var(--bg3);border-radius:10px;padding:6px 12px;font-weight:700;font-size:14px;color:var(--accent2);font-family:'Syne',sans-serif;}
-  .timer-badge.urgent{color:var(--danger);animation:blink 1s infinite;}
-  @keyframes blink{0%,100%{opacity:1}50%{opacity:0.5}}
-  .q-body{padding:20px;flex:1;}
-  .q-meta{font-size:12px;color:var(--muted);margin-bottom:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;}
-  .q-text{font-size:17px;line-height:1.6;font-weight:500;margin-bottom:24px;}
-  .options-list{display:flex;flex-direction:column;gap:10px;}
-  .option-btn{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:14px 16px;cursor:pointer;text-align:left;font-size:15px;color:var(--text);font-family:'DM Sans',sans-serif;transition:all 0.2s;display:flex;align-items:center;gap:12px;}
-  .option-btn .opt-letter{font-weight:700;color:var(--muted);font-family:'Syne',sans-serif;min-width:20px;}
-  .option-btn:hover:not(:disabled){border-color:var(--accent);}
-  .option-btn.correct{background:rgba(0,212,170,0.15);border-color:var(--accent);}
-  .option-btn.correct .opt-letter{color:var(--accent);}
-  .option-btn.wrong{background:rgba(255,107,107,0.15);border-color:var(--danger);}
-  .option-btn.wrong .opt-letter{color:var(--danger);}
-  .explanation-box{background:var(--bg2);border-left:3px solid var(--accent);border-radius:0 12px 12px 0;padding:14px 16px;margin-top:16px;font-size:14px;line-height:1.6;color:var(--muted);display:none;}
-  .explanation-box.show{display:block;}
-  .quiz-footer{padding:16px 20px;background:var(--bg2);border-top:1px solid var(--border);}
-  .btn-next{background:var(--accent);color:#0a1628;border:none;border-radius:12px;padding:14px;width:100%;font-size:16px;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer;}
-  .btn-next:disabled{opacity:0.4;cursor:not-allowed;}
-
-  /* RESULT */
-  #quiz-result{display:none;flex-direction:column;min-height:100vh;background:var(--bg);align-items:center;justify-content:center;padding:30px 20px;text-align:center;}
-  #quiz-result.show{display:flex;}
-  .result-ring{width:150px;height:150px;border-radius:50%;border:8px solid var(--bg3);margin:0 auto 24px;display:flex;align-items:center;justify-content:center;flex-direction:column;}
-  .result-ring .score-num{font-size:36px;font-weight:800;font-family:'Syne',sans-serif;color:var(--accent);}
-  .result-ring .score-total{font-size:14px;color:var(--muted);}
-  .result-title{font-size:26px;font-weight:800;margin-bottom:8px;}
-  .result-sub{color:var(--muted);font-size:15px;margin-bottom:32px;}
-  .result-actions{display:flex;flex-direction:column;gap:10px;width:100%;max-width:300px;}
-  .btn-secondary{background:var(--bg2);color:var(--text);border:1.5px solid var(--border);border-radius:12px;padding:13px;font-size:15px;font-weight:600;font-family:'Syne',sans-serif;cursor:pointer;}
-
-  /* NOTES */
-  .notes-subjects{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:16px;}
-  .notes-subjects::-webkit-scrollbar{display:none;}
-  .notes-tab{background:var(--bg2);border:1.5px solid var(--border);border-radius:50px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:600;white-space:nowrap;color:var(--muted);transition:all 0.2s;}
-  .notes-tab.active{background:var(--accent);color:#0a1628;border-color:var(--accent);}
-  .topic-list{display:flex;flex-direction:column;gap:8px;}
-  .topic-item{background:var(--card);border:1px solid var(--border);border-radius:14px;cursor:pointer;overflow:hidden;}
-  .topic-header{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;}
-  .topic-header h3{font-size:14px;font-weight:600;}
-  .topic-body{padding:0 16px 14px;font-size:14px;line-height:1.7;color:var(--muted);display:none;}
-  .topic-body.open{display:block;}
-
-  /* LEADERBOARD */
-  .lb-header{background:linear-gradient(135deg,#172544,#0e2245);border-radius:var(--radius);padding:20px;margin-bottom:16px;text-align:center;}
-  .lb-header h2{font-size:22px;font-weight:800;color:var(--accent2);}
-  .lb-header p{font-size:13px;color:var(--muted);margin-top:4px;}
-  .lb-list{display:flex;flex-direction:column;gap:8px;}
-  .lb-item{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;}
-  .lb-item.me{border-color:var(--accent);background:rgba(0,212,170,0.08);}
-  .lb-rank{font-size:18px;font-weight:800;font-family:'Syne',sans-serif;min-width:28px;color:var(--muted);}
-  .lb-rank.gold{color:#f7c948;}
-  .lb-rank.silver{color:#c0c0c0;}
-  .lb-rank.bronze{color:#cd7f32;}
-  .lb-name{flex:1;font-weight:600;font-size:14px;}
-  .lb-score{font-weight:700;color:var(--accent);font-family:'Syne',sans-serif;}
-
-  /* BOOKMARKS */
-  .bookmark-item{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px;}
-  .bookmark-item .bm-subject{font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
-  .bookmark-item .bm-q{font-size:14px;line-height:1.5;margin-bottom:10px;}
-  .bookmark-item .bm-ans{font-size:13px;color:var(--accent);font-weight:600;}
-  .bookmark-item .bm-remove{background:none;border:none;color:var(--danger);font-size:12px;cursor:pointer;margin-top:8px;font-family:'DM Sans',sans-serif;}
-
-  /* PROFILE */
-  .profile-header{background:var(--bg2);border-radius:var(--radius);padding:24px;text-align:center;margin-bottom:16px;}
-  .profile-avatar{width:72px;height:72px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;font-family:'Syne',sans-serif;color:#0a1628;margin:0 auto 12px;}
-  .profile-name{font-size:20px;font-weight:700;}
-  .profile-role{font-size:12px;color:var(--muted);margin-top:4px;}
-  .profile-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px;}
-  .ps-card{background:var(--card);border-radius:14px;padding:14px;text-align:center;border:1px solid var(--border);}
-  .ps-card .ps-num{font-size:22px;font-weight:800;font-family:'Syne',sans-serif;color:var(--accent);}
-  .ps-card .ps-label{font-size:11px;color:var(--muted);margin-top:2px;}
-  .settings-list{display:flex;flex-direction:column;gap:2px;}
-  .setting-item{background:var(--card);border-radius:12px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-bottom:4px;}
-  .setting-item .si-left{display:flex;align-items:center;gap:12px;font-size:14px;font-weight:500;}
-  .setting-item .si-icon2{font-size:20px;}
-  .toggle{width:44px;height:24px;background:var(--bg3);border-radius:50px;position:relative;cursor:pointer;transition:background 0.3s;}
-  .toggle.on{background:var(--accent);}
-  .toggle::after{content:'';position:absolute;width:18px;height:18px;background:#fff;border-radius:50%;top:3px;left:3px;transition:left 0.3s;}
-  .toggle.on::after{left:23px;}
-  .logout-btn{background:rgba(255,107,107,0.1);border:1.5px solid var(--danger);color:var(--danger);border-radius:12px;padding:13px;width:100%;font-size:15px;font-weight:600;font-family:'Syne',sans-serif;cursor:pointer;margin-top:16px;}
-
-  /* PARENT */
-  .parent-child-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:14px;}
-  .parent-child-card h3{font-size:16px;font-weight:700;margin-bottom:4px;}
-  .parent-child-card .pcc-role{font-size:12px;color:var(--muted);margin-bottom:14px;}
-  .progress-subject{margin-bottom:12px;}
-  .progress-subject .ps-top{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;}
-  .progress-subject .ps-top span:last-child{color:var(--accent);font-weight:600;}
-
-  /* EMPTY */
-  .empty-state{text-align:center;padding:60px 20px;color:var(--muted);}
-  .empty-state .es-icon{font-size:48px;margin-bottom:16px;}
-  .empty-state p{font-size:15px;}
-  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(0,212,170,0.15);color:var(--accent);}
-  .mt-16{margin-top:16px;}
-  .page-title{font-size:22px;font-weight:800;margin-bottom:4px;}
-  .page-sub{font-size:13px;color:var(--muted);margin-bottom:20px;}
-  ::-webkit-scrollbar{width:4px;}
-  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+:root{--bg:#0a1628;--bg2:#111e35;--bg3:#172544;--card:#1a2d50;--accent:#00d4aa;--accent2:#f7c948;--text:#e8f0fe;--muted:#7a90b8;--border:#243455;--danger:#ff6b6b;--radius:16px;}
+.light{--bg:#f0f4ff;--bg2:#e4eaf8;--bg3:#d8e2f5;--card:#fff;--text:#0a1628;--muted:#5a6a8a;--border:#c8d4ee;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+h1,h2,h3,.brand{font-family:'Syne',sans-serif;}
+.screen{display:none;min-height:100vh;}
+.screen.active{display:flex;flex-direction:column;}
+#loading-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:999;align-items:center;justify-content:center;flex-direction:column;gap:16px;}
+.spinner{width:44px;height:44px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+#toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--card);color:var(--text);padding:10px 20px;border-radius:50px;font-size:13px;font-weight:600;border:1px solid var(--border);opacity:0;transition:all 0.3s;z-index:500;pointer-events:none;white-space:nowrap;}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+#splash{background:linear-gradient(135deg,#0a1628,#0e2245,#0a3060);align-items:center;justify-content:center;text-align:center;padding:40px 20px;}
+.splash-logo{font-size:52px;font-weight:800;color:var(--accent);letter-spacing:-2px;margin-bottom:8px;}
+.splash-logo span{color:var(--accent2);}
+.splash-tag{color:var(--muted);font-size:16px;margin-bottom:48px;letter-spacing:2px;text-transform:uppercase;}
+.splash-btn{background:var(--accent);color:#0a1628;padding:16px 40px;border:none;border-radius:50px;font-size:17px;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer;box-shadow:0 4px 20px rgba(0,212,170,0.4);}
+.splash-dots{display:flex;gap:8px;justify-content:center;margin-top:48px;}
+.splash-dots span{width:8px;height:8px;border-radius:50%;background:var(--accent);opacity:0.3;animation:pulse 1.5s infinite;}
+.splash-dots span:nth-child(2){animation-delay:0.3s;}
+.splash-dots span:nth-child(3){animation-delay:0.6s;}
+@keyframes pulse{0%,100%{opacity:0.3}50%{opacity:1}}
+#auth{background:var(--bg);padding:24px 20px;overflow-y:auto;}
+.auth-header{text-align:center;padding:32px 0 24px;}
+.auth-header .brand{font-size:32px;color:var(--accent);font-weight:800;}
+.auth-tabs{display:flex;background:var(--bg2);border-radius:12px;padding:4px;margin-bottom:24px;}
+.auth-tab{flex:1;padding:10px;text-align:center;border-radius:10px;cursor:pointer;font-weight:600;font-size:14px;color:var(--muted);transition:all 0.2s;}
+.auth-tab.active{background:var(--accent);color:#0a1628;}
+.auth-form{display:flex;flex-direction:column;gap:12px;}
+.auth-form input,.auth-form select{background:var(--bg2);border:1.5px solid var(--border);border-radius:12px;padding:14px 16px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;}
+.auth-form input:focus{border-color:var(--accent);}
+.auth-form input::placeholder{color:var(--muted);}
+.btn-primary{background:var(--accent);color:#0a1628;border:none;border-radius:12px;padding:15px;font-size:16px;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer;}
+.auth-switch{text-align:center;color:var(--muted);font-size:14px;margin-top:8px;}
+.auth-switch span{color:var(--accent);cursor:pointer;font-weight:600;}
+#app{background:var(--bg);}
+.topbar{background:var(--bg2);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;}
+.topbar .brand{font-size:22px;color:var(--accent);font-weight:800;}
+.topbar-actions{display:flex;gap:8px;}
+.icon-btn{background:var(--bg3);border:none;border-radius:10px;padding:8px 10px;cursor:pointer;font-size:18px;color:var(--text);}
+.content{padding:20px;flex:1;overflow-y:auto;padding-bottom:90px;}
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+.greeting h2{font-size:24px;font-weight:700;margin-bottom:4px;}
+.greeting p{color:var(--muted);font-size:14px;margin-bottom:20px;}
+.quote-card{background:linear-gradient(135deg,var(--accent),#00b894);border-radius:var(--radius);padding:20px;margin-bottom:20px;color:#0a1628;}
+.quote-card p{font-size:15px;font-weight:600;line-height:1.5;}
+.quote-card span{font-size:12px;opacity:0.7;margin-top:6px;display:block;}
+.stats-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
+.stat-card{background:var(--card);border-radius:var(--radius);padding:16px;border:1px solid var(--border);}
+.stat-num{font-size:28px;font-weight:800;font-family:'Syne',sans-serif;color:var(--accent);}
+.stat-label{font-size:12px;color:var(--muted);margin-top:2px;}
+.section-title{font-size:17px;font-weight:700;margin-bottom:12px;}
+.subject-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
+.subject-card{background:var(--card);border-radius:var(--radius);padding:18px 14px;border:1px solid var(--border);cursor:pointer;text-align:center;transition:all 0.2s;}
+.subject-card:hover{border-color:var(--accent);transform:translateY(-2px);}
+.subject-card .s-icon{font-size:30px;margin-bottom:8px;}
+.subject-card .s-name{font-size:13px;font-weight:600;}
+.quick-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;}
+.qa-btn{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);padding:16px;cursor:pointer;text-align:center;color:var(--text);}
+.qa-btn .qa-icon{font-size:24px;margin-bottom:6px;}
+.qa-btn .qa-label{font-size:13px;font-weight:600;display:block;}
+.bottom-nav{background:var(--bg2);border-top:1px solid var(--border);display:flex;padding:8px 0 16px;position:fixed;bottom:0;left:0;right:0;z-index:100;}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;padding:6px 0;color:var(--muted);font-size:10px;font-weight:600;border:none;background:none;}
+.nav-item .nav-icon{font-size:22px;}
+.nav-item.active{color:var(--accent);}
+.page-title{font-size:22px;font-weight:800;margin-bottom:4px;}
+.page-sub{font-size:13px;color:var(--muted);margin-bottom:20px;}
+.subject-select-item{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);padding:16px 18px;cursor:pointer;display:flex;align-items:center;gap:14px;margin-bottom:10px;}
+.subject-select-item:hover{border-color:var(--accent);}
+.subject-select-item .si-icon{font-size:28px;}
+.subject-select-item .si-info h3{font-size:15px;font-weight:600;}
+.subject-select-item .si-info p{font-size:12px;color:var(--muted);}
+.topic-list-item{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px;cursor:pointer;}
+.topic-list-item:hover{border-color:var(--accent);}
+.topic-list-item h3{font-size:15px;font-weight:600;margin-bottom:4px;}
+.topic-list-item p{font-size:12px;color:var(--muted);}
+.topic-stats{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;}
+.topic-badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;}
+.badge-green{background:rgba(0,212,170,0.15);color:var(--accent);}
+.badge-yellow{background:rgba(247,201,72,0.15);color:var(--accent2);}
+.badge-red{background:rgba(255,107,107,0.15);color:var(--danger);}
+.floating-screen{display:none;flex-direction:column;min-height:100vh;background:var(--bg);position:fixed;inset:0;z-index:50;overflow-y:auto;}
+.floating-screen.show{display:flex;}
+.fs-header{background:var(--bg2);padding:16px 20px;display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;}
+.fs-body{padding:20px;flex:1;padding-bottom:40px;}
+.action-btn{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:16px;cursor:pointer;display:flex;align-items:center;gap:14px;color:var(--text);margin-bottom:10px;width:100%;}
+.action-btn:hover{border-color:var(--accent);}
+.action-btn .ab-icon{font-size:26px;}
+.action-btn .ab-info h3{font-size:15px;font-weight:600;font-family:'Syne',sans-serif;}
+.action-btn .ab-info p{font-size:12px;color:var(--muted);margin-top:2px;}
+.notes-box{background:var(--card);border-radius:14px;padding:16px;border:1px solid var(--border);font-size:14px;line-height:1.8;color:var(--text);white-space:pre-wrap;min-height:80px;}
+.video-frame{width:100%;border-radius:14px;overflow:hidden;margin-top:16px;aspect-ratio:16/9;border:none;}
+#quiz-active{display:none;flex-direction:column;min-height:100vh;background:var(--bg);position:fixed;inset:0;z-index:60;}
+#quiz-active.show{display:flex;}
+.quiz-header{background:var(--bg2);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);}
+.quiz-progress{flex:1;margin:0 12px;}
+.progress-bar{background:var(--bg3);border-radius:50px;height:6px;overflow:hidden;}
+.progress-fill{background:var(--accent);height:100%;border-radius:50px;transition:width 0.4s;}
+.timer-badge{background:var(--bg3);border-radius:10px;padding:6px 12px;font-weight:700;font-size:14px;color:var(--accent2);font-family:'Syne',sans-serif;min-width:60px;text-align:center;}
+.timer-badge.urgent{color:var(--danger);animation:blink 1s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.5}}
+.q-body{padding:20px;flex:1;overflow-y:auto;}
+.q-meta{font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:1px;}
+.q-marks{font-size:12px;color:var(--accent2);font-weight:700;margin-bottom:12px;}
+.q-text{font-size:17px;line-height:1.6;font-weight:500;margin-bottom:20px;}
+.options-list{display:flex;flex-direction:column;gap:10px;}
+.option-btn{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:14px 16px;cursor:pointer;text-align:left;font-size:15px;color:var(--text);font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:12px;transition:all 0.2s;width:100%;}
+.option-btn .opt-letter{font-weight:700;color:var(--muted);font-family:'Syne',sans-serif;min-width:20px;}
+.option-btn:hover:not(:disabled){border-color:var(--accent);}
+.option-btn.correct{background:rgba(0,212,170,0.15);border-color:var(--accent);}
+.option-btn.correct .opt-letter{color:var(--accent);}
+.option-btn.wrong{background:rgba(255,107,107,0.15);border-color:var(--danger);}
+.option-btn.wrong .opt-letter{color:var(--danger);}
+.explanation-box{background:var(--bg2);border-left:3px solid var(--accent);border-radius:0 12px 12px 0;padding:14px 16px;margin-top:16px;font-size:14px;line-height:1.6;color:var(--muted);display:none;}
+.explanation-box.show{display:block;}
+.quiz-footer{padding:16px 20px;background:var(--bg2);border-top:1px solid var(--border);}
+.btn-next{background:var(--accent);color:#0a1628;border:none;border-radius:12px;padding:14px;width:100%;font-size:16px;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer;}
+.btn-next:disabled{opacity:0.4;cursor:not-allowed;}
+#quiz-result{display:none;flex-direction:column;min-height:100vh;background:var(--bg);align-items:center;justify-content:center;padding:30px 20px;text-align:center;overflow-y:auto;position:fixed;inset:0;z-index:70;}
+#quiz-result.show{display:flex;}
+.result-ring{width:150px;height:150px;border-radius:50%;border:8px solid var(--bg3);margin:0 auto 16px;display:flex;align-items:center;justify-content:center;flex-direction:column;}
+.result-ring .score-num{font-size:32px;font-weight:800;font-family:'Syne',sans-serif;color:var(--accent);}
+.result-ring .score-total{font-size:13px;color:var(--muted);}
+.result-title{font-size:24px;font-weight:800;margin-bottom:8px;}
+.result-msg{color:var(--muted);font-size:15px;margin-bottom:8px;line-height:1.6;max-width:320px;font-style:italic;}
+.result-marks{font-size:13px;color:var(--accent2);font-weight:700;margin-bottom:24px;}
+.result-actions{display:flex;flex-direction:column;gap:10px;width:100%;max-width:300px;}
+.btn-secondary{background:var(--bg2);color:var(--text);border:1.5px solid var(--border);border-radius:12px;padding:13px;font-size:15px;font-weight:600;font-family:'Syne',sans-serif;cursor:pointer;}
+.mock-info-card{background:var(--card);border-radius:var(--radius);padding:20px;border:1px solid var(--border);margin-bottom:14px;}
+.mock-info-card h3{font-size:18px;font-weight:700;margin-bottom:12px;color:var(--accent);}
+.mock-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:14px;}
+.mock-row:last-child{border:none;}
+.mock-row span:last-child{font-weight:600;color:var(--accent2);}
+.progress-subject-card{background:var(--card);border-radius:14px;padding:16px;margin-bottom:10px;border:1px solid var(--border);}
+.progress-subject-card h3{font-size:15px;font-weight:700;margin-bottom:12px;}
+.topic-progress-item{margin-bottom:10px;}
+.topic-progress-item .tp-top{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;}
+.tp-bar{background:var(--bg3);border-radius:50px;height:6px;overflow:hidden;}
+.tp-fill{height:100%;border-radius:50px;transition:width 0.5s;}
+.tp-fill.strong{background:var(--accent);}
+.tp-fill.average{background:var(--accent2);}
+.tp-fill.weak{background:var(--danger);}
+.lb-header{background:linear-gradient(135deg,#172544,#0e2245);border-radius:var(--radius);padding:20px;margin-bottom:16px;text-align:center;}
+.lb-header h2{font-size:22px;font-weight:800;color:var(--accent2);}
+.lb-item{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;margin-bottom:8px;}
+.lb-item.me{border-color:var(--accent);background:rgba(0,212,170,0.08);}
+.lb-rank{font-size:18px;font-weight:800;min-width:28px;color:var(--muted);}
+.lb-rank.gold{color:#f7c948;}
+.lb-rank.silver{color:#c0c0c0;}
+.lb-rank.bronze{color:#cd7f32;}
+.lb-name{flex:1;font-weight:600;font-size:14px;}
+.lb-score{font-weight:700;color:var(--accent);font-family:'Syne',sans-serif;}
+.bookmark-item{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px;}
+.bm-subject{font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
+.bm-q{font-size:14px;line-height:1.5;margin-bottom:8px;}
+.bm-ans{font-size:13px;color:var(--accent);font-weight:600;}
+.bm-remove{background:none;border:none;color:var(--danger);font-size:12px;cursor:pointer;margin-top:8px;font-family:'DM Sans',sans-serif;}
+.profile-header{background:var(--bg2);border-radius:var(--radius);padding:24px;text-align:center;margin-bottom:16px;}
+.profile-avatar{width:72px;height:72px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;color:#0a1628;margin:0 auto 12px;}
+.profile-name{font-size:20px;font-weight:700;}
+.profile-role{font-size:12px;color:var(--muted);margin-top:4px;}
+.code-box{background:var(--bg3);border:2px dashed var(--accent);border-radius:14px;padding:16px;text-align:center;margin-bottom:16px;}
+.code-box p{font-size:12px;color:var(--muted);margin-bottom:6px;}
+.big-code{font-size:32px;font-weight:800;color:var(--accent);font-family:'Syne',sans-serif;letter-spacing:4px;}
+.code-box small{font-size:11px;color:var(--muted);}
+.profile-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px;}
+.ps-card{background:var(--card);border-radius:14px;padding:14px;text-align:center;border:1px solid var(--border);}
+.ps-num{font-size:22px;font-weight:800;font-family:'Syne',sans-serif;color:var(--accent);}
+.ps-label{font-size:11px;color:var(--muted);margin-top:2px;}
+.setting-item{background:var(--card);border-radius:12px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;cursor:pointer;}
+.setting-item .si-left{display:flex;align-items:center;gap:12px;font-size:14px;font-weight:500;}
+.toggle{width:44px;height:24px;background:var(--bg3);border-radius:50px;position:relative;cursor:pointer;transition:background 0.3s;}
+.toggle.on{background:var(--accent);}
+.toggle::after{content:'';position:absolute;width:18px;height:18px;background:#fff;border-radius:50%;top:3px;left:3px;transition:left 0.3s;}
+.toggle.on::after{left:23px;}
+.logout-btn{background:rgba(255,107,107,0.1);border:1.5px solid var(--danger);color:var(--danger);border-radius:12px;padding:13px;width:100%;font-size:15px;font-weight:600;font-family:'Syne',sans-serif;cursor:pointer;margin-top:16px;}
+.monitored-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:14px;}
+.empty-state{text-align:center;padding:60px 20px;color:var(--muted);}
+.empty-state .es-icon{font-size:48px;margin-bottom:16px;}
+.mt-16{margin-top:16px;}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
 </style>
 </head>
 <body>
 
-<!-- LOADING -->
-<div id="loading-overlay">
-  <div class="spinner"></div>
-  <p>Please wait...</p>
-</div>
-
-<!-- TOAST -->
+<div id="loading-overlay"><div class="spinner"></div><p style="color:var(--text);font-size:14px;margin-top:8px">Please wait...</p></div>
 <div id="toast"></div>
 
 <!-- SPLASH -->
@@ -871,20 +219,25 @@
     <div class="auth-tab" onclick="switchAuthTab('register')">Register</div>
   </div>
   <div id="login-form" class="auth-form">
-    <input type="email" id="login-email" placeholder="Email address" />
-    <input type="password" id="login-pass" placeholder="Password" />
+    <input type="email" id="login-email" placeholder="Email address"/>
+    <input type="password" id="login-pass" placeholder="Password"/>
     <button class="btn-primary" onclick="doLogin()">Login →</button>
     <div class="auth-switch">No account? <span onclick="switchAuthTab('register')">Register here</span></div>
   </div>
   <div id="register-form" class="auth-form" style="display:none">
-    <input type="text" id="reg-name" placeholder="Full name" />
-    <input type="email" id="reg-email" placeholder="Email address" />
-    <input type="password" id="reg-pass" placeholder="Create password (min 6 chars)" />
-    <select id="reg-role">
-      <option value="student">I am a Student</option>
-      <option value="parent">I am a Parent</option>
+    <input type="text" id="reg-name" placeholder="Full name"/>
+    <input type="email" id="reg-email" placeholder="Email address"/>
+    <input type="password" id="reg-pass" placeholder="Password (min 6 characters)"/>
+    <select id="reg-role" onchange="handleRoleChange()">
+      <option value="student">🎓 I am a Student</option>
+      <option value="parent">👨‍👩‍👧 Parent</option>
+      <option value="sibling">👦 Sibling</option>
+      <option value="mentor">🧑‍🏫 Mentor / Teacher</option>
+      <option value="guardian">🛡️ Guardian</option>
     </select>
-    <input type="text" id="reg-child" placeholder="Your child's full name (parents only)" style="display:none" />
+    <div id="monitor-fields" style="display:none">
+      <input type="text" id="reg-student-code" placeholder="Enter student's code (e.g. STU-4829)" style="margin-top:0"/>
+    </div>
     <button class="btn-primary" onclick="doRegister()">Create Account →</button>
     <div class="auth-switch">Have account? <span onclick="switchAuthTab('login')">Login here</span></div>
   </div>
@@ -899,91 +252,55 @@
       <button class="icon-btn" onclick="showTab('profile')">👤</button>
     </div>
   </div>
-
   <!-- HOME -->
   <div id="tab-home" class="tab-content active content">
-    <div class="greeting">
-      <h2 id="greeting-text">Welcome! 👋</h2>
-      <p id="greeting-name">Keep pushing — JAMB is waiting!</p>
-    </div>
-    <div class="quote-card">
-      <div class="q-icon">💬</div>
-      <p id="daily-quote">Loading quote...</p>
-      <span id="quote-author"></span>
-    </div>
+    <div class="greeting"><h2 id="greeting-text">Welcome! 👋</h2><p id="greeting-name">Keep pushing!</p></div>
+    <div class="quote-card"><p id="daily-quote">...</p><span id="quote-author"></span></div>
     <div class="stats-row">
-      <div class="stat-card">
-        <div class="stat-num" id="stat-quizzes">0</div>
-        <div class="stat-label">Quizzes Done</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-num" id="stat-avg">0%</div>
-        <div class="stat-label">Average Score</div>
-      </div>
+      <div class="stat-card"><div class="stat-num" id="stat-quizzes">0</div><div class="stat-label">Quizzes Done</div></div>
+      <div class="stat-card"><div class="stat-num" id="stat-avg">0%</div><div class="stat-label">Average Score</div></div>
     </div>
     <div class="section-title">📚 Subjects</div>
     <div class="subject-grid">
-      <div class="subject-card" onclick="goToQuiz('English')"><div class="s-icon">📖</div><div class="s-name">English</div><div class="s-count">10 questions</div></div>
-      <div class="subject-card" onclick="goToQuiz('Biology')"><div class="s-icon">🧬</div><div class="s-name">Biology</div><div class="s-count">10 questions</div></div>
-      <div class="subject-card" onclick="goToQuiz('Chemistry')"><div class="s-icon">⚗️</div><div class="s-name">Chemistry</div><div class="s-count">10 questions</div></div>
-      <div class="subject-card" onclick="goToQuiz('Physics')"><div class="s-icon">⚡</div><div class="s-name">Physics</div><div class="s-count">10 questions</div></div>
+      <div class="subject-card" onclick="openSubject('English')"><div class="s-icon">📖</div><div class="s-name">English</div></div>
+      <div class="subject-card" onclick="openSubject('Biology')"><div class="s-icon">🧬</div><div class="s-name">Biology</div></div>
+      <div class="subject-card" onclick="openSubject('Chemistry')"><div class="s-icon">⚗️</div><div class="s-name">Chemistry</div></div>
+      <div class="subject-card" onclick="openSubject('Physics')"><div class="s-icon">⚡</div><div class="s-name">Physics</div></div>
     </div>
     <div class="section-title">⚡ Quick Actions</div>
     <div class="quick-actions">
-      <button class="qa-btn" onclick="startMockExam()"><div class="qa-icon">🏆</div><span class="qa-label">Mock Exam</span></button>
-      <button class="qa-btn" onclick="showTab('notes')"><div class="qa-icon">📝</div><span class="qa-label">Study Notes</span></button>
+      <button class="qa-btn" onclick="showMockScreen()"><div class="qa-icon">🏆</div><span class="qa-label">Mock Exam</span></button>
+      <button class="qa-btn" onclick="showTab('progress')"><div class="qa-icon">📊</div><span class="qa-label">My Progress</span></button>
       <button class="qa-btn" onclick="showTab('leaderboard')"><div class="qa-icon">🥇</div><span class="qa-label">Leaderboard</span></button>
       <button class="qa-btn" onclick="showTab('bookmarks')"><div class="qa-icon">🔖</div><span class="qa-label">Bookmarks</span></button>
     </div>
   </div>
-
-  <!-- QUIZ -->
-  <div id="tab-quiz" class="tab-content content">
-    <div class="page-title">Quiz Mode</div>
-    <div class="page-sub">Choose a subject to practice</div>
-    <div class="subject-select-list">
-      <div class="subject-select-item" onclick="selectSubjectForQuiz('English')"><div class="si-icon">📖</div><div class="si-info"><h3>English Language</h3><p>Comprehension, Grammar, Vocabulary</p></div></div>
-      <div class="subject-select-item" onclick="selectSubjectForQuiz('Biology')"><div class="si-icon">🧬</div><div class="si-info"><h3>Biology</h3><p>Cell Biology, Genetics, Ecology</p></div></div>
-      <div class="subject-select-item" onclick="selectSubjectForQuiz('Chemistry')"><div class="si-icon">⚗️</div><div class="si-info"><h3>Chemistry</h3><p>Periodic Table, Reactions, Organic</p></div></div>
-      <div class="subject-select-item" onclick="selectSubjectForQuiz('Physics')"><div class="si-icon">⚡</div><div class="si-info"><h3>Physics</h3><p>Mechanics, Electricity, Waves</p></div></div>
-    </div>
-    <div id="quiz-mode-select" style="display:none;margin-top:20px;">
-      <button class="back-btn" onclick="document.getElementById('quiz-mode-select').style.display='none'">← Back</button>
-      <div class="section-title" id="quiz-mode-subject-title">Choose Mode</div>
-      <div class="quiz-mode-btns">
-        <button class="mode-btn" onclick="startQuiz('practice',10)"><div class="mb-icon">🧪</div><div class="mb-info"><h3>Practice (10 Qs)</h3><p>Quick practice, no timer pressure</p></div></button>
-        <button class="mode-btn" onclick="startQuiz('timed',10)"><div class="mb-icon">⏱️</div><div class="mb-info"><h3>Timed Quiz (10 Qs)</h3><p>30 seconds per question</p></div></button>
-        <button class="mode-btn" onclick="startMockExam()"><div class="mb-icon">🏆</div><div class="mb-info"><h3>Full Mock Exam</h3><p>All subjects, 2 hours — just like UTME!</p></div></button>
-      </div>
-    </div>
+  <!-- SUBJECTS -->
+  <div id="tab-subjects" class="tab-content content">
+    <div class="page-title">📚 Subjects</div>
+    <div class="page-sub">Choose a subject to study or practice</div>
+    <div class="subject-select-item" onclick="openSubject('English')"><div class="si-icon">📖</div><div class="si-info"><h3>English Language</h3><p>60 questions in mock • Multiple sections</p></div></div>
+    <div class="subject-select-item" onclick="openSubject('Biology')"><div class="si-icon">🧬</div><div class="si-info"><h3>Biology</h3><p>40 questions in mock • 2.5 marks each</p></div></div>
+    <div class="subject-select-item" onclick="openSubject('Chemistry')"><div class="si-icon">⚗️</div><div class="si-info"><h3>Chemistry</h3><p>40 questions in mock • 2.5 marks each</p></div></div>
+    <div class="subject-select-item" onclick="openSubject('Physics')"><div class="si-icon">⚡</div><div class="si-info"><h3>Physics</h3><p>40 questions in mock • 2.5 marks each</p></div></div>
   </div>
-
-  <!-- NOTES -->
-  <div id="tab-notes" class="tab-content content">
-    <div class="page-title">Study Notes</div>
-    <div class="page-sub">Tap a topic to expand</div>
-    <div class="notes-subjects">
-      <div class="notes-tab active" onclick="showNotes('English',this)">English</div>
-      <div class="notes-tab" onclick="showNotes('Biology',this)">Biology</div>
-      <div class="notes-tab" onclick="showNotes('Chemistry',this)">Chemistry</div>
-      <div class="notes-tab" onclick="showNotes('Physics',this)">Physics</div>
-    </div>
-    <div id="notes-content" class="topic-list"></div>
+  <!-- PROGRESS -->
+  <div id="tab-progress" class="tab-content content">
+    <div class="page-title">📊 My Progress</div>
+    <div class="page-sub">Your strengths and weak areas</div>
+    <div id="progress-content"></div>
   </div>
-
   <!-- LEADERBOARD -->
   <div id="tab-leaderboard" class="tab-content content">
     <div class="lb-header"><h2>🏆 Leaderboard</h2><p>Top students this week</p></div>
-    <div class="lb-list" id="lb-list"><div style="text-align:center;padding:30px;color:var(--muted)">Loading... ⏳</div></div>
+    <div id="lb-list"><div style="text-align:center;padding:30px;color:var(--muted)">Loading... ⏳</div></div>
   </div>
-
   <!-- BOOKMARKS -->
   <div id="tab-bookmarks" class="tab-content content">
     <div class="page-title">🔖 Bookmarks</div>
-    <div class="page-sub">Questions you saved to review</div>
+    <div class="page-sub">Questions saved for review</div>
     <div id="bookmarks-list"></div>
   </div>
-
   <!-- PROFILE -->
   <div id="tab-profile" class="tab-content content">
     <div class="profile-header">
@@ -991,36 +308,99 @@
       <div class="profile-name" id="profile-name-display">Student</div>
       <div class="profile-role" id="profile-role-display">UTME Candidate</div>
     </div>
+    <div id="student-code-section" style="display:none">
+      <div class="code-box">
+        <p>📤 Share this code with your parent, sibling or mentor</p>
+        <div class="big-code" id="student-monitor-code">STU-0000</div>
+        <small>They enter this code when registering to monitor your progress</small>
+      </div>
+    </div>
     <div class="profile-stats">
       <div class="ps-card"><div class="ps-num" id="ps-quizzes">0</div><div class="ps-label">Quizzes</div></div>
       <div class="ps-card"><div class="ps-num" id="ps-avg">0%</div><div class="ps-label">Avg Score</div></div>
       <div class="ps-card"><div class="ps-num" id="ps-streak">0🔥</div><div class="ps-label">Streak</div></div>
     </div>
-    <div id="parent-section" style="display:none">
-      <div class="section-title">👨‍👩‍👧 Your Child's Progress</div>
-      <div class="parent-child-card">
-        <h3 id="child-name-display">Child Name</h3>
-        <div class="pcc-role">Live progress from Firebase ☁️</div>
-        <div class="progress-subject"><div class="ps-top"><span>English</span><span id="p-eng">0%</span></div><div class="progress-bar"><div class="progress-fill" id="pb-eng" style="width:0%"></div></div></div>
-        <div class="progress-subject"><div class="ps-top"><span>Biology</span><span id="p-bio">0%</span></div><div class="progress-bar"><div class="progress-fill" id="pb-bio" style="width:0%"></div></div></div>
-        <div class="progress-subject"><div class="ps-top"><span>Chemistry</span><span id="p-chem">0%</span></div><div class="progress-bar"><div class="progress-fill" id="pb-chem" style="width:0%"></div></div></div>
-        <div class="progress-subject"><div class="ps-top"><span>Physics</span><span id="p-phy">0%</span></div><div class="progress-bar"><div class="progress-fill" id="pb-phy" style="width:0%"></div></div></div>
-      </div>
+    <div id="monitored-section" style="display:none">
+      <div class="section-title">👀 Students You Monitor</div>
+      <div id="monitored-list"></div>
     </div>
-    <div class="settings-list">
-      <div class="section-title mt-16">Settings</div>
-      <div class="setting-item"><div class="si-left"><span class="si-icon2">🌙</span> Dark Mode</div><div class="toggle on" id="dark-toggle" onclick="toggleDark()"></div></div>
-      <div class="setting-item"><div class="si-left"><span class="si-icon2">🔔</span> Daily Reminders</div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
-    </div>
+    <div class="section-title mt-16">Settings</div>
+    <div class="setting-item"><div class="si-left"><span>🌙</span> Dark Mode</div><div class="toggle on" id="dark-toggle" onclick="toggleDark()"></div></div>
+    <div class="setting-item"><div class="si-left"><span>🔔</span> Daily Reminders</div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
     <button class="logout-btn" onclick="doLogout()">Logout</button>
   </div>
-
   <div class="bottom-nav">
     <button class="nav-item active" onclick="showTab('home')" id="nav-home"><span class="nav-icon">🏠</span><span>Home</span></button>
-    <button class="nav-item" onclick="showTab('quiz')" id="nav-quiz"><span class="nav-icon">🧪</span><span>Quiz</span></button>
-    <button class="nav-item" onclick="showTab('notes')" id="nav-notes"><span class="nav-icon">📝</span><span>Notes</span></button>
+    <button class="nav-item" onclick="showTab('subjects')" id="nav-subjects"><span class="nav-icon">📚</span><span>Subjects</span></button>
+    <button class="nav-item" onclick="showTab('progress')" id="nav-progress"><span class="nav-icon">📊</span><span>Progress</span></button>
     <button class="nav-item" onclick="showTab('leaderboard')" id="nav-leaderboard"><span class="nav-icon">🏆</span><span>Ranks</span></button>
     <button class="nav-item" onclick="showTab('profile')" id="nav-profile"><span class="nav-icon">👤</span><span>Profile</span></button>
+  </div>
+</div>
+
+<!-- SUBJECT TOPICS SCREEN -->
+<div id="subject-topics-screen" class="floating-screen">
+  <div class="fs-header">
+    <button class="icon-btn" onclick="closeFloating('subject-topics-screen')">←</button>
+    <div style="flex:1"><div style="font-size:18px;font-weight:700;font-family:'Syne',sans-serif;" id="subject-title-display">English</div><div style="font-size:12px;color:var(--muted)">Choose a topic</div></div>
+    <button class="icon-btn" onclick="addNewTopic()" title="Add topic">＋</button>
+  </div>
+  <div class="fs-body"><div id="topics-container"></div></div>
+</div>
+
+<!-- TOPIC DETAIL SCREEN -->
+<div id="topic-detail-screen" class="floating-screen">
+  <div class="fs-header">
+    <button class="icon-btn" onclick="closeFloating('topic-detail-screen')">←</button>
+    <div style="flex:1"><div style="font-size:18px;font-weight:700;font-family:'Syne',sans-serif;" id="topic-name-display">Topic 1</div><div style="font-size:12px;color:var(--muted);" id="topic-subject-display">English</div></div>
+    <button class="icon-btn" onclick="editTopic()" title="Edit">✏️</button>
+  </div>
+  <div class="fs-body">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div style="font-size:15px;font-weight:700;">📝 Study Notes</div>
+    </div>
+    <div class="notes-box" id="topic-notes-display">No notes added yet. Tap ✏️ to add study notes and a video link.</div>
+    <div id="video-section" style="display:none;margin-top:16px;">
+      <div style="font-size:15px;font-weight:700;margin-bottom:8px;">🎥 Video Lesson</div>
+      <iframe id="video-frame" class="video-frame" allowfullscreen></iframe>
+    </div>
+    <div style="margin-top:20px;">
+      <div style="font-size:15px;font-weight:700;margin-bottom:12px;">🧪 Practice This Topic</div>
+      <button class="action-btn" onclick="startTopicQuiz('practice')"><div class="ab-icon">🧪</div><div class="ab-info"><h3>Practice Quiz</h3><p>No time pressure — learn at your pace</p></div></button>
+      <button class="action-btn" onclick="startTopicQuiz('timed')"><div class="ab-icon">⏱️</div><div class="ab-info"><h3>Timed Quiz</h3><p>30 seconds per question — sharpen your speed</p></div></button>
+    </div>
+  </div>
+</div>
+
+<!-- MOCK INTRO SCREEN -->
+<div id="mock-screen" class="floating-screen">
+  <div class="fs-header">
+    <button class="icon-btn" onclick="closeFloating('mock-screen')">←</button>
+    <div style="font-size:18px;font-weight:700;font-family:'Syne',sans-serif;">Mock Exam</div>
+    <div></div>
+  </div>
+  <div class="fs-body">
+    <div class="mock-info-card">
+      <h3>🏆 JAMB Mock Exam</h3>
+      <div class="mock-row"><span>Total Questions</span><span>180</span></div>
+      <div class="mock-row"><span>Time Allowed</span><span>2 Hours (120 mins)</span></div>
+      <div class="mock-row"><span>Total Score</span><span>400 marks</span></div>
+      <div class="mock-row"><span>English Language</span><span>60 questions / 100 marks</span></div>
+      <div class="mock-row"><span>Biology</span><span>40 questions / 100 marks</span></div>
+      <div class="mock-row"><span>Chemistry</span><span>40 questions / 100 marks</span></div>
+      <div class="mock-row"><span>Physics</span><span>40 questions / 100 marks</span></div>
+    </div>
+    <div class="mock-info-card">
+      <h3 style="color:var(--accent2);">📝 English Marking Scheme</h3>
+      <div class="mock-row"><span>Comprehension (5 questions)</span><span>3 marks each = 15</span></div>
+      <div class="mock-row"><span>General English (40 questions)</span><span>2 marks each = 80</span></div>
+      <div class="mock-row"><span>Other topics (5 questions)</span><span>1 mark each = 5</span></div>
+      <div class="mock-row"><span style="font-weight:700">English Total</span><span style="font-weight:700;color:var(--accent)">100 marks</span></div>
+    </div>
+    <div style="background:rgba(255,107,107,0.1);border:1px solid var(--danger);border-radius:14px;padding:14px;margin-bottom:20px;">
+      <p style="font-size:13px;color:var(--danger);font-weight:600;">⚠️ Once started, the timer cannot be paused. Make sure you are ready before starting!</p>
+    </div>
+    <button class="btn-primary" style="width:100%;padding:16px;font-size:17px;" onclick="startMockExam()">Start Mock Exam 🚀</button>
   </div>
 </div>
 
@@ -1029,9 +409,9 @@
   <div class="quiz-header">
     <button class="icon-btn" onclick="exitQuiz()">✕</button>
     <div class="quiz-progress">
-      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:4px;">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px;">
         <span id="q-counter">Q 1/10</span>
-        <span id="q-subject-badge" class="badge">English</span>
+        <span id="q-subject-badge" style="background:rgba(0,212,170,0.15);color:var(--accent);padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;">English</span>
       </div>
       <div class="progress-bar"><div class="progress-fill" id="q-progress" style="width:10%"></div></div>
     </div>
@@ -1039,6 +419,7 @@
   </div>
   <div class="q-body">
     <div class="q-meta" id="q-meta">Question 1</div>
+    <div class="q-marks" id="q-marks"></div>
     <div class="q-text" id="q-text">Loading...</div>
     <div class="options-list" id="options-list"></div>
     <div class="explanation-box" id="explanation-box"></div>
@@ -1053,18 +434,582 @@
 
 <!-- RESULT -->
 <div id="quiz-result">
-  <div style="font-size:48px;margin-bottom:16px;" id="result-emoji">🎉</div>
+  <div style="font-size:60px;margin-bottom:12px;" id="result-emoji">🎉</div>
   <div class="result-ring">
     <div class="score-num" id="result-score">0</div>
     <div class="score-total" id="result-total">out of 10</div>
   </div>
   <div class="result-title" id="result-title">Well done!</div>
-  <div class="result-sub" id="result-sub">Keep studying!</div>
+  <div class="result-msg" id="result-msg"></div>
+  <div class="result-marks" id="result-marks"></div>
   <div class="result-actions">
     <button class="btn-primary" onclick="retryQuiz()">Try Again 🔄</button>
     <button class="btn-secondary" onclick="exitQuiz()">Back to Home</button>
   </div>
 </div>
 
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import{getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import{getFirestore,doc,setDoc,getDoc,collection,getDocs}from"https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+const fbApp=initializeApp({apiKey:"AIzaSyB9gAdr3oFyxu7K_zYhCcGrsxuZY2Pt9Bs",authDomain:"studygee-28943.firebaseapp.com",projectId:"studygee-28943",storageBucket:"studygee-28943.firebasestorage.app",messagingSenderId:"253358407287",appId:"1:253358407287:web:372ea73e4363d695065072"});
+const auth=getAuth(fbApp),db=getFirestore(fbApp);
+
+// FEEDBACK MESSAGES (50+ unique, Nigerian style)
+const FB={
+  outstanding:[
+    {e:"🔥",t:"OUTSTANDING!",m:"Omo! You don smoke this exam finish! Even JAMB sef go fear you!"},
+    {e:"👑",t:"LEGENDARY!",m:"Abeg, are you human? This score is not normal at all! Keep this up and 400 is yours!"},
+    {e:"🚀",t:"SUPERSTAR!",m:"You dey fly! At this rate, your admission letter don already print itself!"},
+    {e:"💎",t:"BRILLIANT!",m:"This is what excellence looks like. Your future is so bright, it needs sunglasses!"},
+    {e:"⚡",t:"UNSTOPPABLE!",m:"Nothing can stop you at this point. Not even JAMB server problem!"},
+    {e:"🏆",t:"CHAMPION!",m:"You are in a league of your own. Keep going, the university of your dream is waiting!"},
+    {e:"🌟",t:"EXCEPTIONAL!",m:"Your performance today is the stuff of legends. Don't stop now!"},
+    {e:"🎯",t:"PERFECT AIM!",m:"Every answer like arrow — straight to the mark! You are ready for the real thing!"},
+    {e:"💪",t:"PHENOMENAL!",m:"Your brain is working at full capacity today. Protect it at all costs!"},
+    {e:"🥇",t:"GOLD STANDARD!",m:"This is what first class material looks like. Keep this energy!"},
+    {e:"🦁",t:"FEARLESS!",m:"You attacked those questions like a lion! JAMB doesn't stand a chance!"},
+    {e:"🌈",t:"MAGNIFICENT!",m:"Every single question — you handled like a pro. This is your destiny!"},
+  ],
+  excellent:[
+    {e:"🎉",t:"EXCELLENT!",m:"You are doing very well! A little more push and you'll be unstoppable!"},
+    {e:"👏",t:"IMPRESSIVE!",m:"Very solid performance! Your hard work is showing. Don't relax now!"},
+    {e:"✨",t:"AMAZING!",m:"You are making progress that your future self will thank you for!"},
+    {e:"🎊",t:"WELL DONE!",m:"This is a great score! A few more sessions like this and JAMB will bow!"},
+    {e:"🙌",t:"GREAT JOB!",m:"Your consistency is paying off. Don't let up now — push to 100%!"},
+    {e:"⭐",t:"STELLAR!",m:"You are shining! The universities are watching (not literally, but still)!"},
+    {e:"📈",t:"ON THE RISE!",m:"Every quiz you take, you get better. This trajectory is beautiful!"},
+    {e:"🦅",t:"SOARING!",m:"You are flying high! Don't look down — eyes on the prize!"},
+    {e:"💡",t:"SHARP!",m:"Your brain is very sharp today! Keep feeding it with knowledge!"},
+    {e:"🔑",t:"ALMOST THERE!",m:"This is solid work. A little more focus and you'll crack that 90+ mark!"},
+  ],
+  good:[
+    {e:"👍",t:"GOOD JOB!",m:"You are doing okay but there's room to improve. Push a little harder!"},
+    {e:"💡",t:"KEEP GOING!",m:"Good effort! Identify your weak topics and attack them one by one!"},
+    {e:"🎯",t:"ON TRACK!",m:"You are on the right path! Consistency will take you to the top!"},
+    {e:"📚",t:"KEEP STUDYING!",m:"Good score but JAMB doesn't negotiate. Read those notes again!"},
+    {e:"🌱",t:"GROWING!",m:"You are growing! Water your knowledge daily and watch yourself bloom!"},
+    {e:"🏃",t:"KEEP RUNNING!",m:"You are in the race! Don't slow down now — the finish line is in sight!"},
+    {e:"🔧",t:"FINE TUNING!",m:"Almost there! A few adjustments and your score will shoot up!"},
+    {e:"💪",t:"SOLID EFFORT!",m:"Good work today! Tomorrow, come back stronger and smarter!"},
+    {e:"🎵",t:"FINDING YOUR RHYTHM!",m:"You are getting there! Find your study rhythm and don't break it!"},
+    {e:"🌤️",t:"CLEARING UP!",m:"The clouds are clearing. Keep studying and the sun of success will shine!"},
+  ],
+  average:[
+    {e:"😤",t:"YOU CAN DO BETTER!",m:"This score is okay but okay won't get you into your dream school. Step it up!"},
+    {e:"⚠️",t:"DANGER ZONE!",m:"You are in the middle — and the middle is a dangerous place in UTME. Push higher!"},
+    {e:"📖",t:"MORE READING NEEDED!",m:"The notes are there for a reason. Read them again — slowly this time!"},
+    {e:"⏰",t:"TIME IS TICKING!",m:"JAMB day is coming and this score is not enough. What's the plan?"},
+    {e:"🔍",t:"FIND YOUR WEAK SPOTS!",m:"Check your Progress tab to see which topics are pulling you down. Fix them!"},
+    {e:"🌊",t:"DON'T DRIFT!",m:"You are floating in the middle. Swim to the top — don't let the current pull you down!"},
+    {e:"📊",t:"AVERAGE IS NOT YOUR DESTINY!",m:"You were not born to be average. Study like your admission depends on it — because it does!"},
+    {e:"🎯",t:"REFOCUS!",m:"You lost concentration somewhere. Find it, dust it off, and come back stronger!"},
+    {e:"🧠",t:"USE YOUR BRAIN MORE!",m:"You have the ability — you just need to unlock it. Study harder!"},
+    {e:"🔄",t:"RESET AND PUSH!",m:"Take a deep breath, review your notes, and come back with full force!"},
+  ],
+  poor:[
+    {e:"😅",t:"EHN EHN!",m:"My friend, this score needs serious work o! Open that textbook right now — not tomorrow!"},
+    {e:"😬",t:"TROUBLE AHEAD!",m:"Omo, this one na serious matter. JAMB is not your mate and it shows right now!"},
+    {e:"🚨",t:"RED ALERT!",m:"This score is sending SOS signals! Your village people are even worried. Study NOW!"},
+    {e:"😂",t:"EVEN YOUR TEXTBOOK IS CRYING!",m:"Your textbook is somewhere crying and asking why you abandoned it. Go back to it!"},
+    {e:"🪑",t:"SIT DOWN AND READ!",m:"No more playing. Sit down, open your books, and don't get up until you understand!"},
+    {e:"😳",t:"THIS IS NOT IT!",m:"I won't lie to you — this score will not take you anywhere. Start again from the basics!"},
+    {e:"📵",t:"DROP THE PHONE!",m:"Put down whatever is distracting you and face your books. Your future is at stake!"},
+    {e:"🏥",t:"EMERGENCY!",m:"This score needs emergency treatment! Prescription: 2 hours of reading daily. No excuses!"},
+    {e:"⚡",t:"WAKE UP!",m:"Your potential is sleeping o! Wake it up! You are capable of much better than this!"},
+    {e:"🙏",t:"FOR YOUR FUTURE!",m:"Please, for your own sake, read more. Your dream school is counting on you to show up!"},
+    {e:"📚",t:"BACK TO BASICS!",m:"Sometimes we need to go back to the beginning. That is okay. Just don't stay there!"},
+    {e:"🤔",t:"WHAT HAPPENED?",m:"Between you and me — what happened in there? Go back and identify exactly where you fell."},
+  ],
+  veryPoor:[
+    {e:"😭",t:"E PAIN ME FOR YOU!",m:"This score is painful to see. But pain is a great teacher — let it push you to read more!"},
+    {e:"🆘",t:"MAYDAY MAYDAY!",m:"This score is a cry for help! The help you need is called your textbook. Open it immediately!"},
+    {e:"🤯",t:"HOW?!",m:"How is this possible? You have the questions, the notes, the app — use them! Start over today!"},
+    {e:"😤",t:"ENOUGH IS ENOUGH!",m:"No more excuses. No more distractions. Sit down and study like your life depends on it — it does!"},
+    {e:"🌚",t:"E DON DARK!",m:"This score is darker than NEPA blackout. Time to bring the light — study hard!"},
+    {e:"💔",t:"YOUR FUTURE IS CRYING!",m:"Your dream school is watching this score and shaking its head. Don't let it down!"},
+    {e:"🚒",t:"FIRE BRIGADE APPROACH!",m:"Emergency action needed! Call yourself to order. Announce you are now serious. Mean it!"},
+    {e:"😔",t:"THIS IS NOT YOU!",m:"Deep down you know you can do better. Prove it — not to me, but to yourself!"},
+    {e:"🔔",t:"WAKE UP CALL!",m:"Consider this your official wake up call. JAMB waits for nobody. Arise and study!"},
+    {e:"💪",t:"BOUNCE BACK!",m:"Every master was once a disaster. The difference is they didn't quit. Don't quit!"},
+    {e:"🌅",t:"NEW DAWN!",m:"Today is the day you decide to change your story. Start studying NOW!"},
+    {e:"🎯",t:"ZERO IN!",m:"Zero distractions. Zero excuses. Just you, your notes, and your future. Go!"},
+  ]
+};
+
+// SAMPLE QUESTIONS
+const SQ={
+  English:[
+    {q:"Choose the word closest in meaning to 'Eloquent'",opts:["Fluent","Silent","Confused","Angry"],ans:0,exp:"Eloquent means having the power of fluent, forceful speech.",marks:2,section:"general"},
+    {q:"Identify the figure of speech in: 'The pen is mightier than the sword'",opts:["Simile","Metaphor","Personification","Hyperbole"],ans:1,exp:"This is a Metaphor — comparing two unlike things without using 'like' or 'as'.",marks:2,section:"general"},
+    {q:"Which sentence is grammatically correct?",opts:["She don't like him","He doesn't likes it","They don't agree","We doesn't know"],ans:2,exp:"'They don't agree' uses the correct auxiliary verb 'don't' with a plural subject.",marks:2,section:"general"},
+    {q:"Choose the antonym of 'Verbose'",opts:["Wordy","Concise","Talkative","Fluent"],ans:1,exp:"Verbose = using too many words. Concise = brief and clear. They are antonyms.",marks:2,section:"general"},
+    {q:"Choose the correct plural of 'criterion'",opts:["Criterions","Criterias","Criteria","Criterium"],ans:2,exp:"'Criteria' is the correct Latin-origin plural of 'criterion'.",marks:2,section:"general"},
+    {q:"The word 'Gregarious' means:",opts:["Lonely","Sociable","Aggressive","Timid"],ans:1,exp:"Gregarious describes a person who is fond of company and sociable.",marks:2,section:"general"},
+    {q:"Which of these is an example of personification?",opts:["As brave as a lion","The sun smiled at us","He ran like the wind","The room was as cold as ice"],ans:1,exp:"'The sun smiled at us' gives the sun a human quality (smiling), making it personification.",marks:2,section:"general"},
+    {q:"Choose the word that is misspelled:",opts:["Necessary","Accommodate","Beautyful","Occasion"],ans:2,exp:"The correct spelling is 'Beautiful' — note the 'i' before 'ful'.",marks:2,section:"general"},
+    {q:"A word that sounds like another but differs in meaning is:",opts:["Synonym","Antonym","Homophone","Metaphor"],ans:2,exp:"Homophones sound the same but differ in meaning, e.g. 'hear' and 'here'.",marks:2,section:"general"},
+    {q:"The sentence 'He is a lion in battle' is an example of:",opts:["Simile","Metaphor","Hyperbole","Alliteration"],ans:1,exp:"A metaphor directly states one thing is another without using 'like' or 'as'.",marks:2,section:"general"},
+  ],
+  Biology:[
+    {q:"The powerhouse of the cell is the:",opts:["Nucleus","Mitochondria","Ribosome","Cell membrane","Vacuole"],ans:1,exp:"Mitochondria produce ATP through cellular respiration, giving cells energy.",marks:2.5,section:"science"},
+    {q:"Which blood group is the universal donor?",opts:["A","B","AB","O","A and B"],ans:3,exp:"Blood group O negative lacks A, B, and Rh antigens — compatible with all.",marks:2.5,section:"science"},
+    {q:"Photosynthesis takes place in the:",opts:["Mitochondria","Ribosome","Chloroplast","Vacuole","Nucleus"],ans:2,exp:"Chloroplasts contain chlorophyll and are the site of photosynthesis.",marks:2.5,section:"science"},
+    {q:"Which organ produces insulin?",opts:["Liver","Kidney","Pancreas","Stomach","Spleen"],ans:2,exp:"The pancreas produces insulin which regulates blood glucose levels.",marks:2.5,section:"science"},
+    {q:"The basic unit of heredity is:",opts:["Cell","Gene","Chromosome","Nucleus","Protein"],ans:1,exp:"Genes are DNA segments that carry hereditary information from parents to offspring.",marks:2.5,section:"science"},
+    {q:"Osmosis involves the movement of:",opts:["Solute molecules","Water molecules","Both solute and water","Gases only","Proteins"],ans:1,exp:"Osmosis is the movement of water across a semi-permeable membrane from low to high solute concentration.",marks:2.5,section:"science"},
+    {q:"Which part of the brain controls balance?",opts:["Cerebrum","Medulla","Cerebellum","Thalamus","Hypothalamus"],ans:2,exp:"The cerebellum coordinates movement, balance, and fine motor skills.",marks:2.5,section:"science"},
+    {q:"The process by which plants lose water through leaves is:",opts:["Respiration","Transpiration","Osmosis","Diffusion","Absorption"],ans:1,exp:"Transpiration is evaporation of water through stomata in plant leaves.",marks:2.5,section:"science"},
+  ],
+  Chemistry:[
+    {q:"The atomic number of Carbon is:",opts:["6","12","8","14","4"],ans:0,exp:"Carbon has 6 protons in its nucleus, giving it atomic number 6.",marks:2.5,section:"science"},
+    {q:"What is the chemical formula for water?",opts:["H2O2","HO","H2O","H3O","H2O3"],ans:2,exp:"Water has 2 hydrogen atoms bonded to 1 oxygen atom: H2O.",marks:2.5,section:"science"},
+    {q:"The pH of a neutral solution is:",opts:["0","7","14","5","10"],ans:1,exp:"pH 7 is neutral. Values below 7 are acidic; above 7 are alkaline.",marks:2.5,section:"science"},
+    {q:"Which element is a noble gas?",opts:["Nitrogen","Chlorine","Argon","Oxygen","Fluorine"],ans:2,exp:"Argon (Group 18) has a complete outer electron shell and is very unreactive.",marks:2.5,section:"science"},
+    {q:"NaCl is the chemical formula for:",opts:["Sugar","Common Salt","Baking Soda","Bleach","Vinegar"],ans:1,exp:"NaCl (Sodium Chloride) is the formula for common table salt.",marks:2.5,section:"science"},
+    {q:"Ionic bonds form between:",opts:["Two metals","Two non-metals","Metal and non-metal","Two gases","Metalloids only"],ans:2,exp:"Ionic bonds form when a metal transfers electrons to a non-metal, creating ions.",marks:2.5,section:"science"},
+    {q:"Avogadro's number is approximately:",opts:["6.02×10²³","3.14×10²³","9.8×10²³","1.6×10¹⁹","2.0×10²³"],ans:0,exp:"Avogadro's number (6.02×10²³) is the number of particles in one mole of a substance.",marks:2.5,section:"science"},
+    {q:"Which type of reaction releases heat to surroundings?",opts:["Endothermic","Exothermic","Electrolytic","Catalytic","Reversible"],ans:1,exp:"Exothermic reactions release energy as heat. Examples: combustion, neutralisation.",marks:2.5,section:"science"},
+  ],
+  Physics:[
+    {q:"The SI unit of force is:",opts:["Joule","Watt","Newton","Pascal","Ampere"],ans:2,exp:"The Newton (N) is the SI unit of force. 1N = force to accelerate 1kg at 1m/s².",marks:2.5,section:"science"},
+    {q:"Speed of light in vacuum is approximately:",opts:["3×10⁶ m/s","3×10⁸ m/s","3×10¹⁰ m/s","3×10⁴ m/s","3×10¹² m/s"],ans:1,exp:"The speed of light in vacuum ≈ 3×10⁸ m/s (300,000 km/s).",marks:2.5,section:"science"},
+    {q:"Newton's 3rd Law states that:",opts:["F=ma","Every action has an equal and opposite reaction","Objects at rest stay at rest","Energy is conserved","Momentum is always zero"],ans:1,exp:"For every action force, there is an equal and opposite reaction force.",marks:2.5,section:"science"},
+    {q:"The formula for kinetic energy is:",opts:["mgh","½mv²","mv","Fd","P/t"],ans:1,exp:"Kinetic Energy = ½mv², where m = mass (kg) and v = velocity (m/s).",marks:2.5,section:"science"},
+    {q:"Pressure is defined as:",opts:["Force × Area","Force ÷ Area","Mass × Gravity","Energy ÷ Time","Velocity × Time"],ans:1,exp:"Pressure = Force ÷ Area. SI unit is Pascal (Pa) = N/m².",marks:2.5,section:"science"},
+    {q:"Which type of wave does NOT require a medium?",opts:["Sound","Water waves","Electromagnetic","Seismic","All require medium"],ans:2,exp:"Electromagnetic waves (light, radio, X-rays) travel through vacuum — no medium needed.",marks:2.5,section:"science"},
+    {q:"The acceleration due to gravity on Earth is approximately:",opts:["10 m/s²","9.8 m/s²","8.9 m/s²","12 m/s²","7.5 m/s²"],ans:1,exp:"Standard gravitational acceleration on Earth's surface = 9.8 m/s² (≈ 10 m/s²).",marks:2.5,section:"science"},
+    {q:"Ohm's Law states that:",opts:["P=IV","V=IR","F=ma","E=mc²","W=Fd"],ans:1,exp:"Ohm's Law: V = IR, where V=voltage, I=current, R=resistance.",marks:2.5,section:"science"},
+  ]
+};
+
+const DEFAULT_TOPICS={
+  English:Array.from({length:10},(_,i)=>({id:`eng-${i}`,name:`Topic ${i+1}`,notes:'',videoUrl:'',questions:[]})),
+  Biology:Array.from({length:10},(_,i)=>({id:`bio-${i}`,name:`Topic ${i+1}`,notes:'',videoUrl:'',questions:[]})),
+  Chemistry:Array.from({length:10},(_,i)=>({id:`chem-${i}`,name:`Topic ${i+1}`,notes:'',videoUrl:'',questions:[]})),
+  Physics:Array.from({length:10},(_,i)=>({id:`phy-${i}`,name:`Topic ${i+1}`,notes:'',videoUrl:'',questions:[]})),
+};
+
+const QUOTES=[
+  {q:"Success is not final, failure is not fatal — the courage to continue is what counts.",a:"Winston Churchill"},
+  {q:"Education is the most powerful weapon you can use to change the world.",a:"Nelson Mandela"},
+  {q:"The secret of getting ahead is getting started.",a:"Mark Twain"},
+  {q:"Hard work beats talent when talent doesn't work hard.",a:"Tim Notke"},
+  {q:"Believe you can and you're halfway there.",a:"Theodore Roosevelt"},
+  {q:"Don't watch the clock; do what it does — keep going.",a:"Sam Levenson"},
+  {q:"Your time is limited, don't waste it living someone else's life.",a:"Steve Jobs"},
+  {q:"The future belongs to those who believe in the beauty of their dreams.",a:"Eleanor Roosevelt"},
+];
+
+// STATE
+let currentUser=null,userData=null,isDark=true;
+let currentSubject='',currentTopicIdx=-1;
+let appTopics=JSON.parse(localStorage.getItem('sg_topics')||'null')||JSON.parse(JSON.stringify(DEFAULT_TOPICS));
+let bookmarks=JSON.parse(localStorage.getItem('sg_bookmarks')||'[]');
+let quiz={questions:[],index:0,score:0,earnedMarks:0,mode:'practice',timer:null,timeLeft:30,isMock:false,subject:'',topicIdx:-1};
+
+// AUTH LISTENER
+onAuthStateChanged(auth,async user=>{
+  if(user){currentUser=user;await loadUserData();showApp();}
+  else{currentUser=null;userData=null;showScreen('auth');}
+});
+
+window.showAuth=()=>showScreen('auth');
+window.showScreen=id=>{
+  document.querySelectorAll('.screen').forEach(s=>{s.style.display='none';s.classList.remove('active');});
+  ['quiz-active','quiz-result'].forEach(id2=>{const el=document.getElementById(id2);if(el){el.style.display='none';el.classList.remove('show');}});
+  const el=document.getElementById(id);if(!el)return;
+  if(el.classList.contains('screen')){el.style.display='flex';el.classList.add('active');}
+  else{el.style.display='flex';el.classList.add('show');}
+};
+
+window.switchAuthTab=tab=>{
+  document.querySelectorAll('.auth-tab').forEach((t,i)=>t.classList.toggle('active',(i===0&&tab==='login')||(i===1&&tab==='register')));
+  document.getElementById('login-form').style.display=tab==='login'?'flex':'none';
+  document.getElementById('register-form').style.display=tab==='register'?'flex':'none';
+};
+
+window.handleRoleChange=()=>{
+  const r=document.getElementById('reg-role').value;
+  document.getElementById('monitor-fields').style.display=r==='student'?'none':'block';
+};
+
+window.doRegister=async()=>{
+  const name=document.getElementById('reg-name').value.trim();
+  const email=document.getElementById('reg-email').value.trim();
+  const pass=document.getElementById('reg-pass').value;
+  const role=document.getElementById('reg-role').value;
+  const sc=document.getElementById('reg-student-code')?.value.trim()||'';
+  if(!name||!email||!pass){showToast('Please fill all fields');return;}
+  if(role!=='student'&&!sc){showToast('Please enter the student monitoring code');return;}
+  try{
+    showLoading(true);
+    const cred=await createUserWithEmailAndPassword(auth,email,pass);
+    const mc=role==='student'?('STU-'+Math.floor(1000+Math.random()*9000)):'';
+    await setDoc(doc(db,'users',cred.user.uid),{name,email,role,monitorCode:mc,studentCode:sc,quizzes:0,totalScore:0,streak:0,topicProgress:{},createdAt:new Date().toISOString()});
+    showLoading(false);
+  }catch(e){showLoading(false);showToast(e.message.includes('email-already')?'Email already registered!':'Registration failed. Try again.');}
+};
+
+window.doLogin=async()=>{
+  const email=document.getElementById('login-email').value.trim();
+  const pass=document.getElementById('login-pass').value;
+  if(!email||!pass){showToast('Please fill all fields');return;}
+  try{showLoading(true);await signInWithEmailAndPassword(auth,email,pass);showLoading(false);}
+  catch(e){showLoading(false);showToast('Invalid email or password');}
+};
+
+window.doLogout=async()=>await signOut(auth);
+
+async function loadUserData(){
+  const snap=await getDoc(doc(db,'users',currentUser.uid));
+  if(snap.exists())userData=snap.data();
+}
+async function saveUserData(){
+  if(!currentUser||!userData)return;
+  await setDoc(doc(db,'users',currentUser.uid),userData,{merge:true});
+}
+
+function showApp(){
+  showScreen('app');
+  updateGreeting();loadDailyQuote();updateStats();loadProfile();loadLeaderboard();loadBookmarks();loadProgress();
+}
+
+window.showTab=tab=>{
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const tc=document.getElementById('tab-'+tab);if(tc)tc.classList.add('active');
+  const ni=document.getElementById('nav-'+tab);if(ni)ni.classList.add('active');
+  if(tab==='leaderboard')loadLeaderboard();
+  if(tab==='bookmarks')loadBookmarks();
+  if(tab==='profile')loadProfile();
+  if(tab==='progress')loadProgress();
+};
+
+function updateGreeting(){
+  if(!userData)return;
+  const h=new Date().getHours();
+  const t=h<12?'Good morning ☀️':h<17?'Good afternoon 🌤️':'Good evening 🌙';
+  document.getElementById('greeting-text').textContent=t+', '+userData.name.split(' ')[0]+'!';
+  document.getElementById('greeting-name').textContent='Keep pushing — JAMB is waiting! 🇳🇬';
+}
+
+function loadDailyQuote(){
+  const q=QUOTES[new Date().getDay()%QUOTES.length];
+  document.getElementById('daily-quote').textContent=q.q;
+  document.getElementById('quote-author').textContent='— '+q.a;
+}
+
+function updateStats(){
+  if(!userData)return;
+  const avg=userData.quizzes>0?Math.round(userData.totalScore/userData.quizzes):0;
+  ['stat-quizzes','ps-quizzes'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=userData.quizzes||0;});
+  ['stat-avg','ps-avg'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=avg+'%';});
+  const ps=document.getElementById('ps-streak');if(ps)ps.textContent=(userData.streak||0)+'🔥';
+}
+
+// SUBJECTS & TOPICS
+window.openSubject=subject=>{
+  currentSubject=subject;
+  document.getElementById('subject-title-display').textContent=subject;
+  renderTopics();
+  openFloating('subject-topics-screen');
+};
+
+window.closeFloating=id=>{const el=document.getElementById(id);if(el){el.style.display='none';el.classList.remove('show');}};
+window.openFloating=id=>{const el=document.getElementById(id);if(el){el.style.display='flex';el.classList.add('show');}};
+
+function renderTopics(){
+  const topics=appTopics[currentSubject]||[];
+  const c=document.getElementById('topics-container');
+  let html=topics.map((t,i)=>{
+    const tp=userData?.topicProgress?.[currentSubject]?.[i];
+    const avg=tp&&tp.attempts>0?Math.round(tp.score/tp.attempts):null;
+    let badge='';
+    if(avg!==null){
+      if(avg>=70)badge=`<span class="topic-badge badge-green">💚 ${avg}% Strong</span>`;
+      else if(avg>=50)badge=`<span class="topic-badge badge-yellow">🟡 ${avg}% Average</span>`;
+      else badge=`<span class="topic-badge badge-red">🔴 ${avg}% Needs Work</span>`;
+    }
+    return `<div class="topic-list-item" onclick="openTopic(${i})"><h3>${t.name}</h3><p>${t.questions.length} question${t.questions.length!==1?'s':''} • ${t.notes?'Has notes':'No notes yet'}</p><div class="topic-stats">${badge}</div></div>`;
+  }).join('');
+  html+=`<button onclick="addNewTopic()" style="width:100%;background:none;border:1.5px dashed var(--border);border-radius:14px;padding:14px;color:var(--muted);font-size:14px;cursor:pointer;margin-top:4px;">＋ Add New Topic</button>`;
+  c.innerHTML=html;
+}
+
+window.addNewTopic=()=>{
+  const name=prompt(`New topic name for ${currentSubject}:`,`Topic ${(appTopics[currentSubject]?.length||0)+1}`);
+  if(!name)return;
+  appTopics[currentSubject].push({id:`${currentSubject}-${Date.now()}`,name,notes:'',videoUrl:'',questions:[]});
+  saveTopics();renderTopics();
+};
+
+function saveTopics(){localStorage.setItem('sg_topics',JSON.stringify(appTopics));}
+
+window.openTopic=idx=>{
+  currentTopicIdx=idx;
+  const t=appTopics[currentSubject][idx];
+  document.getElementById('topic-name-display').textContent=t.name;
+  document.getElementById('topic-subject-display').textContent=currentSubject;
+  document.getElementById('topic-notes-display').textContent=t.notes||'No notes added yet. Tap ✏️ to add study notes and a YouTube video link.';
+  const vs=document.getElementById('video-section');
+  if(t.videoUrl){
+    const vid=extractYTId(t.videoUrl);
+    if(vid){document.getElementById('video-frame').src=`https://www.youtube.com/embed/${vid}`;vs.style.display='block';}
+    else vs.style.display='none';
+  }else vs.style.display='none';
+  openFloating('topic-detail-screen');
+};
+
+function extractYTId(url){const m=url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/);return m?m[1]:null;}
+
+window.editTopic=()=>{
+  const t=appTopics[currentSubject][currentTopicIdx];
+  const name=prompt('Topic name:',t.name);if(name===null)return;
+  const notes=prompt('Study notes (paste here):',t.notes||'');if(notes===null)return;
+  const videoUrl=prompt('YouTube video URL (optional):',t.videoUrl||'')||'';
+  t.name=name;t.notes=notes;t.videoUrl=videoUrl;
+  saveTopics();openTopic(currentTopicIdx);showToast('Topic updated! ✅');
+};
+
+window.showMockScreen=()=>openFloating('mock-screen');
+
+// QUIZ
+window.startTopicQuiz=mode=>{
+  const t=appTopics[currentSubject][currentTopicIdx];
+  let qs=t.questions.length>0?[...t.questions]:[...(SQ[currentSubject]||[])];
+  qs=shuffle(qs);
+  quiz={questions:qs,index:0,score:0,earnedMarks:0,mode,timer:null,timeLeft:30,isMock:false,subject:currentSubject,topicIdx:currentTopicIdx};
+  closeFloating('topic-detail-screen');closeFloating('subject-topics-screen');
+  startQuizUI();
+};
+
+window.startMockExam=()=>{
+  closeFloating('mock-screen');
+  const engComp=shuffle(SQ.English).slice(0,5).map(q=>({...q,marks:3,section:'comprehension'}));
+  const engGen=shuffle(SQ.English).map(q=>({...q,marks:2,section:'general'}));
+  const engOther=shuffle(SQ.English).slice(0,5).map(q=>({...q,marks:1,section:'other'}));
+  const bio=shuffle(SQ.Biology).map(q=>({...q,marks:2.5}));
+  const chem=shuffle(SQ.Chemistry).map(q=>({...q,marks:2.5}));
+  const phy=shuffle(SQ.Physics).map(q=>({...q,marks:2.5}));
+  quiz={questions:[...engComp,...engGen,...engOther,...bio,...chem,...phy],index:0,score:0,earnedMarks:0,mode:'mock',timer:null,timeLeft:7200,isMock:true,subject:'Mock Exam',topicIdx:-1};
+  startQuizUI();
+};
+
+function shuffle(arr){return[...arr].sort(()=>Math.random()-0.5);}
+
+function startQuizUI(){
+  const qa=document.getElementById('quiz-active');qa.style.display='flex';qa.classList.add('show');
+  document.getElementById('quiz-result').style.display='none';document.getElementById('quiz-result').classList.remove('show');
+  renderQ();
+}
+
+function renderQ(){
+  const q=quiz.questions[quiz.index];
+  if(!q){endQuiz();return;}
+  const total=quiz.questions.length,idx=quiz.index;
+  document.getElementById('q-counter').textContent=`Q ${idx+1}/${total}`;
+  document.getElementById('q-subject-badge').textContent=quiz.subject;
+  document.getElementById('q-progress').style.width=((idx+1)/total*100)+'%';
+  document.getElementById('q-meta').textContent=`Question ${idx+1} of ${total}`;
+  document.getElementById('q-marks').textContent=q.marks?`⭐ ${q.marks} mark${q.marks!==1?'s':''}`:'' ;
+  document.getElementById('q-text').textContent=q.q;
+  document.getElementById('explanation-box').textContent=q.exp||'No explanation available for this question.';
+  document.getElementById('explanation-box').classList.remove('show');
+  document.getElementById('btn-next').disabled=true;
+  document.getElementById('bookmark-btn').textContent='🔖';
+  const letters=['A','B','C','D','E'];
+  const ol=document.getElementById('options-list');ol.innerHTML='';
+  q.opts.forEach((opt,i)=>{
+    const btn=document.createElement('button');btn.className='option-btn';
+    btn.innerHTML=`<span class="opt-letter">${letters[i]}</span>${opt}`;
+    btn.onclick=()=>selectAns(i,btn);
+    ol.appendChild(btn);
+  });
+  clearInterval(quiz.timer);
+  if(quiz.isMock){
+    updateMockTimer();
+    quiz.timer=setInterval(()=>{quiz.timeLeft--;updateMockTimer();if(quiz.timeLeft<=0){clearInterval(quiz.timer);endQuiz();}},1000);
+  }else if(quiz.mode==='timed'){
+    quiz.timeLeft=30;updateTimer();
+    quiz.timer=setInterval(()=>{quiz.timeLeft--;updateTimer();if(quiz.timeLeft<=0){clearInterval(quiz.timer);autoSkip();}},1000);
+  }else{document.getElementById('timer-display').textContent='∞';}
+}
+
+function autoSkip(){
+  document.querySelectorAll('.option-btn').forEach(b=>b.disabled=true);
+  document.getElementById('btn-next').disabled=false;
+  document.querySelectorAll('.option-btn')[quiz.questions[quiz.index].ans].classList.add('correct');
+  document.getElementById('explanation-box').classList.add('show');
+}
+
+function updateTimer(){const t=quiz.timeLeft,el=document.getElementById('timer-display');el.textContent=t+'s';el.classList.toggle('urgent',t<=10);}
+function updateMockTimer(){const t=quiz.timeLeft,m=Math.floor(t/60),s=t%60;document.getElementById('timer-display').textContent=`${m}:${s.toString().padStart(2,'0')}`;}
+
+window.selectAns=(idx,btn)=>{
+  clearInterval(quiz.timer);
+  const q=quiz.questions[quiz.index];
+  document.querySelectorAll('.option-btn').forEach(b=>b.disabled=true);
+  if(idx===q.ans){btn.classList.add('correct');quiz.score++;quiz.earnedMarks+=(q.marks||1);}
+  else{btn.classList.add('wrong');document.querySelectorAll('.option-btn')[q.ans].classList.add('correct');}
+  document.getElementById('explanation-box').classList.add('show');
+  document.getElementById('btn-next').disabled=false;
+};
+
+window.nextQuestion=()=>{quiz.index++;if(quiz.index>=quiz.questions.length){clearInterval(quiz.timer);endQuiz();}else renderQ();};
+
+async function endQuiz(){
+  clearInterval(quiz.timer);
+  const score=quiz.score,total=quiz.questions.length,pct=Math.round(score/total*100);
+  const earned=Math.round(quiz.earnedMarks*10)/10;
+  document.getElementById('result-score').textContent=score;
+  document.getElementById('result-total').textContent=`out of ${total}`;
+  document.getElementById('result-marks').textContent=quiz.isMock?`Total Score: ${earned} / 400`:`Marks Earned: ${earned}`;
+  const fb=getFB(pct);
+  document.getElementById('result-emoji').textContent=fb.e;
+  document.getElementById('result-title').textContent=fb.t;
+  document.getElementById('result-msg').textContent=fb.m;
+  if(userData){
+    userData.quizzes=(userData.quizzes||0)+1;
+    userData.totalScore=(userData.totalScore||0)+pct;
+    if(!userData.topicProgress)userData.topicProgress={};
+    if(quiz.topicIdx>=0&&quiz.subject!=='Mock Exam'){
+      if(!userData.topicProgress[quiz.subject])userData.topicProgress[quiz.subject]={};
+      const tp=userData.topicProgress[quiz.subject][quiz.topicIdx]||{score:0,attempts:0};
+      tp.score+=pct;tp.attempts+=1;
+      userData.topicProgress[quiz.subject][quiz.topicIdx]=tp;
+    }
+    await saveUserData();updateStats();
+  }
+  document.getElementById('quiz-active').style.display='none';document.getElementById('quiz-active').classList.remove('show');
+  const qr=document.getElementById('quiz-result');qr.style.display='flex';qr.classList.add('show');
+}
+
+function getFB(pct){
+  let pool;
+  if(pct>=90)pool=FB.outstanding;
+  else if(pct>=80)pool=FB.excellent;
+  else if(pct>=70)pool=FB.good;
+  else if(pct>=55)pool=FB.average;
+  else if(pct>=35)pool=FB.poor;
+  else pool=FB.veryPoor;
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+
+window.retryQuiz=()=>{
+  document.getElementById('quiz-result').style.display='none';
+  if(quiz.isMock)startMockExam();else startTopicQuiz(quiz.mode);
+};
+
+window.exitQuiz=()=>{
+  clearInterval(quiz.timer);
+  document.getElementById('quiz-active').style.display='none';document.getElementById('quiz-active').classList.remove('show');
+  document.getElementById('quiz-result').style.display='none';document.getElementById('quiz-result').classList.remove('show');
+  showScreen('app');showTab('home');
+};
+
+// BOOKMARKS
+window.bookmarkCurrent=()=>{
+  const q=quiz.questions[quiz.index];
+  if(bookmarks.find(b=>b.q===q.q)){showToast('Already bookmarked!');return;}
+  bookmarks.push({subject:quiz.subject,q:q.q,ans:q.opts[q.ans],exp:q.exp||''});
+  localStorage.setItem('sg_bookmarks',JSON.stringify(bookmarks));
+  document.getElementById('bookmark-btn').textContent='✅';showToast('Bookmarked! 🔖');
+};
+
+function loadBookmarks(){
+  const el=document.getElementById('bookmarks-list');
+  if(!bookmarks.length){el.innerHTML='<div class="empty-state"><div class="es-icon">🔖</div><p>No bookmarks yet.<br>Bookmark questions during a quiz!</p></div>';return;}
+  el.innerHTML=bookmarks.map((b,i)=>`<div class="bookmark-item"><div class="bm-subject">${b.subject}</div><div class="bm-q">${b.q}</div><div class="bm-ans">✅ ${b.ans}</div>${b.exp?`<div style="font-size:13px;color:var(--muted);margin-top:6px">${b.exp}</div>`:''}<button class="bm-remove" onclick="removeBookmark(${i})">Remove 🗑️</button></div>`).join('');
+}
+
+window.removeBookmark=i=>{bookmarks.splice(i,1);localStorage.setItem('sg_bookmarks',JSON.stringify(bookmarks));loadBookmarks();};
+
+// PROGRESS
+function loadProgress(){
+  const el=document.getElementById('progress-content');
+  const tp=userData?.topicProgress;
+  if(!tp||!Object.keys(tp).length){el.innerHTML='<div class="empty-state"><div class="es-icon">📊</div><p>No progress yet.<br>Complete some topic quizzes to see your analysis!</p></div>';return;}
+  const subjects=['English','Biology','Chemistry','Physics'];
+  el.innerHTML=subjects.map(subj=>{
+    const stp=tp[subj]||{};
+    const topics=appTopics[subj]||[];
+    const rows=topics.map((t,i)=>{
+      const p=stp[i];
+      if(!p||!p.attempts)return`<div class="topic-progress-item"><div class="tp-top"><span>${t.name}</span><span style="color:var(--muted)">Not attempted</span></div><div class="tp-bar"><div class="tp-fill" style="width:0%"></div></div></div>`;
+      const avg=Math.round(p.score/p.attempts);
+      const cls=avg>=70?'strong':avg>=50?'average':'weak';
+      const emoji=avg>=70?'💚':avg>=50?'🟡':'🔴';
+      return`<div class="topic-progress-item"><div class="tp-top"><span>${t.name}</span><span>${emoji} ${avg}%</span></div><div class="tp-bar"><div class="tp-fill ${cls}" style="width:${avg}%"></div></div></div>`;
+    }).join('');
+    return`<div class="progress-subject-card"><h3>${subj}</h3>${rows}</div>`;
+  }).join('');
+}
+
+// LEADERBOARD
+async function loadLeaderboard(){
+  const el=document.getElementById('lb-list');
+  el.innerHTML='<div style="text-align:center;padding:30px;color:var(--muted)">Loading... ⏳</div>';
+  try{
+    const snap=await getDocs(collection(db,'users'));
+    let users=[];
+    snap.forEach(d=>users.push({id:d.id,...d.data()}));
+    users=users.filter(u=>u.role==='student').sort((a,b)=>{
+      const aA=a.quizzes>0?a.totalScore/a.quizzes:0,bA=b.quizzes>0?b.totalScore/b.quizzes:0;return bA-aA;
+    }).slice(0,10);
+    if(!users.length){el.innerHTML='<div class="empty-state"><div class="es-icon">🏆</div><p>No students yet.<br>Be the first on the leaderboard!</p></div>';return;}
+    const ranks=['🥇','🥈','🥉'],cls=['gold','silver','bronze'];
+    el.innerHTML=users.map((u,i)=>{
+      const avg=u.quizzes>0?Math.round(u.totalScore/u.quizzes):0;
+      const me=currentUser&&u.id===currentUser.uid;
+      return`<div class="lb-item ${me?'me':''}"><div class="lb-rank ${cls[i]||''}">${ranks[i]||i+1}</div><div class="lb-name">${u.name}${me?' (You)':''}</div><div class="lb-score">${avg}%</div></div>`;
+    }).join('');
+  }catch(e){el.innerHTML='<div class="empty-state"><div class="es-icon">📡</div><p>Could not load leaderboard.<br>Check your connection.</p></div>';}
+}
+
+// PROFILE
+async function loadProfile(){
+  if(!userData)return;
+  document.getElementById('profile-avatar').textContent=userData.name[0].toUpperCase();
+  document.getElementById('profile-name-display').textContent=userData.name;
+  const rL={student:'🎓 UTME Candidate',parent:'👨‍👩‍👧 Parent',sibling:'👦 Sibling',mentor:'🧑‍🏫 Mentor/Teacher',guardian:'🛡️ Guardian'};
+  document.getElementById('profile-role-display').textContent=rL[userData.role]||'Student';
+  updateStats();
+  if(userData.role==='student'){
+    document.getElementById('student-code-section').style.display='block';
+    document.getElementById('student-monitor-code').textContent=userData.monitorCode||'STU-0000';
+  }
+  if(userData.role!=='student'){
+    document.getElementById('monitored-section').style.display='block';
+    await loadMonitored();
+  }
+}
+
+async function loadMonitored(){
+  const el=document.getElementById('monitored-list');
+  if(!userData?.studentCode){el.innerHTML='<p style="color:var(--muted);font-size:13px;">No student code entered. Register again with a student code to monitor a student.</p>';return;}
+  try{
+    const snap=await getDocs(collection(db,'users'));
+    let students=[];
+    snap.forEach(d=>{const u=d.data();if(u.monitorCode===userData.studentCode)students.push(u);});
+    if(!students.length){el.innerHTML='<p style="color:var(--muted);font-size:13px;">No student found with that code yet. Ask your student to check their code in Profile.</p>';return;}
+    el.innerHTML=students.map(s=>{
+      const avg=s.quizzes>0?Math.round(s.totalScore/s.quizzes):0;
+      return`<div class="monitored-card"><h3>${s.name}</h3><div style="font-size:12px;color:var(--muted);margin-bottom:10px">🎓 Student</div><div style="font-size:14px"><span style="color:var(--muted)">Quizzes done: </span><strong>${s.quizzes||0}</strong> &nbsp; <span style="color:var(--muted)">Avg score: </span><strong style="color:var(--accent)">${avg}%</strong></div></div>`;
+    }).join('');
+  }catch(e){el.innerHTML='<p style="color:var(--muted);font-size:13px;">Could not load student data. Check your connection.</p>';}
+}
+
+// HELPERS
+window.toggleDark=()=>{
+  isDark=!isDark;document.body.classList.toggle('light',!isDark);
+  document.getElementById('dark-btn').textContent=isDark?'🌙':'☀️';
+  const t=document.getElementById('dark-toggle');if(t)t.classList.toggle('on',isDark);
+};
+function showLoading(show){document.getElementById('loading-overlay').style.display=show?'flex':'none';}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
+window.showToast=showToast;
+</script>
 </body>
 </html>
