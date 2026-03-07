@@ -1282,7 +1282,15 @@ const DEFAULT_TOPICS={
   ],
   Biology:Array.from({length:10},(_,i)=>({id:`bio-${i}`,name:`Topic ${i+1}`,notes:'',videoUrl:'',questions:[]})),
   Chemistry:[
-    {id:'chem-0',name:'Alloys',notes:'',videoUrl:'https://youtu.be/auCotqkQp9A',questions:[]},
+    {id:'chem-0',name:'Alloys',notes:'',videoUrl:'https://youtu.be/auCotqkQp9A',questions:[
+      {q:"Brass is an alloy of:",opts:["Copper and Iron","Copper and Tin","Copper and Zinc","Zinc and Tin"],ans:2,exp:"Brass is Copper + Zinc. A common trick is confusing brass with bronze — remember, Brass has Zinc, while Bronze has Tin.",marks:2.5,section:"science"},
+      {q:"Which of the following alloys is used primarily in the construction of aircraft?",opts:["Steel","Duralumin","Brass","Bronze"],ans:1,exp:"Duralumin is an alloy of Aluminium, Copper, Magnesium, and Manganese. It is chosen for aircraft because it is extremely light but incredibly strong.",marks:2.5,section:"science"},
+      {q:"The main purpose of alloying iron with carbon and chromium to make stainless steel is to:",opts:["Make it a better conductor of electricity","Increase its malleability","Prevent it from rusting (corrosion)","Lower its melting point"],ans:2,exp:"Chromium forms a thin, invisible layer of oxide on the surface, protecting the iron from oxygen and moisture.",marks:2.5,section:"science"},
+      {q:"Solder is an alloy of lead and tin. It is widely used in electrical wiring because:",opts:["It has a very high melting point","It has a low melting point","It is a poor conductor of electricity","It is highly resistant to chemicals"],ans:1,exp:"Its low melting point allows it to melt easily from a soldering iron and solidify quickly to join electrical components without damaging them.",marks:2.5,section:"science"},
+      {q:"Bronze is preferred to pure copper for making statues and medals because it is:",opts:["Softer than copper","More malleable than copper","Stronger and more resistant to corrosion","Lighter than copper"],ans:2,exp:"Alloying copper with tin disrupts the regular arrangement of copper atoms, making the resulting bronze harder and stronger.",marks:2.5,section:"science"},
+      {q:"Which of the following is NOT an alloy?",opts:["Steel","Amalgam","Graphite","Alnico"],ans:2,exp:"Graphite is an allotrope of carbon — a pure element, not a mixture of metals.",marks:2.5,section:"science"},
+      {q:"An amalgam is always an alloy containing:",opts:["Iron","Mercury","Silver","Copper"],ans:1,exp:"Any alloy that uses mercury as its base is called an amalgam (e.g., silver-tin amalgam used in dental fillings).",marks:2.5,section:"science"},
+    ]},
     ...Array.from({length:9},(_,i)=>({id:`chem-${i+1}`,name:`Topic ${i+2}`,notes:'',videoUrl:'',questions:[]}))
   ],
   Physics:Array.from({length:10},(_,i)=>({id:`phy-${i}`,name:`Topic ${i+1}`,notes:'',videoUrl:'',questions:[]})),
@@ -1586,7 +1594,7 @@ function renderQ(){
 function autoSkip(){
   document.querySelectorAll('.opt-btn').forEach(b=>b.disabled=true);
   document.querySelectorAll('.opt-btn')[QZ.qs[QZ.idx].ans].classList.add('correct');
-  document.getElementById('exp-box').classList.add('show');
+  if(!QZ.isMock){document.getElementById('exp-box').classList.add('show');}
   document.getElementById('next-btn').disabled=false;
 }
 function updateTimer(){const t=QZ.tLeft,el=document.getElementById('timer-disp');el.textContent=t+'s';el.classList.toggle('urgent',t<=10);}
@@ -1598,7 +1606,7 @@ window.pickAns=(idx,btn)=>{
   document.querySelectorAll('.opt-btn').forEach(b=>b.disabled=true);
   if(idx===q.ans){btn.classList.add('correct');QZ.score++;QZ.earned+=(q.marks||1);}
   else{btn.classList.add('wrong');document.querySelectorAll('.opt-btn')[q.ans].classList.add('correct');}
-  document.getElementById('exp-box').classList.add('show');
+  if(!QZ.isMock){document.getElementById('exp-box').classList.add('show');}
   document.getElementById('next-btn').disabled=false;
 };
 
