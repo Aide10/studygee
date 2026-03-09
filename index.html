@@ -154,6 +154,37 @@ h1,h2,h3,.brand{font-family:'Syne',sans-serif;}
 .toggle::after{content:'';position:absolute;width:18px;height:18px;background:#fff;border-radius:50%;top:3px;left:3px;transition:left 0.3s;}
 .toggle.on::after{left:23px;}
 .logout-btn{background:rgba(255,107,107,0.1);border:1.5px solid var(--danger);color:var(--danger);border-radius:12px;padding:13px;width:100%;font-size:15px;font-weight:600;font-family:'Syne',sans-serif;cursor:pointer;margin-top:16px;}
+/* NOTIFICATIONS */
+.notif-badge{position:absolute;top:-4px;right:-4px;background:var(--danger);color:#fff;border-radius:50%;font-size:9px;font-weight:700;width:16px;height:16px;display:flex;align-items:center;justify-content:center;}
+.notif-item{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:8px;cursor:pointer;transition:border-color 0.2s;}
+.notif-item.unread{border-left:3px solid var(--accent);}
+.notif-item.read{opacity:0.6;}
+.notif-item-title{font-size:14px;font-weight:600;margin-bottom:4px;}
+.notif-item-body{font-size:13px;color:var(--muted);line-height:1.5;}
+.notif-item-time{font-size:11px;color:var(--muted);margin-top:6px;}
+/* PREMIUM */
+.premium-badge{display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,#f7c948,#ff9f0a);color:#1a1a1a;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-top:4px;}
+.premium-card{background:linear-gradient(135deg,rgba(247,201,72,0.12),rgba(255,159,10,0.08));border:1.5px solid rgba(247,201,72,0.4);border-radius:16px;padding:20px;margin-bottom:16px;text-align:center;}
+.premium-card h3{font-size:18px;font-weight:700;color:#f7c948;margin-bottom:8px;}
+.premium-card p{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:16px;}
+.premium-price{font-size:28px;font-weight:800;color:#f7c948;margin-bottom:4px;}
+.premium-price span{font-size:14px;font-weight:500;color:var(--muted);}
+.premium-features{text-align:left;margin-bottom:16px;}
+.premium-features li{font-size:13px;color:var(--text);padding:5px 0;list-style:none;padding-left:4px;}
+.btn-premium{background:linear-gradient(135deg,#f7c948,#ff9f0a);color:#1a1a1a;border:none;border-radius:12px;padding:14px;width:100%;font-size:15px;font-weight:700;cursor:pointer;font-family:'Syne',sans-serif;}
+/* ANALYTICS */
+.analytics-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:12px;}
+.analytics-card h4{font-size:14px;font-weight:700;margin-bottom:12px;color:var(--text);}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.stat-row:last-child{border-bottom:none;}
+.stat-val{font-weight:700;color:var(--accent);}
+.perf-bar-wrap{margin:6px 0;}
+.perf-bar-label{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:4px;}
+.perf-bar{height:8px;background:var(--border);border-radius:4px;overflow:hidden;}
+.perf-bar-fill{height:100%;background:var(--accent);border-radius:4px;transition:width 0.6s ease;}
+.perf-bar-fill.warn{background:var(--accent2);}
+.perf-bar-fill.danger{background:var(--danger);}
+.student-select{width:100%;background:var(--bg2);border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:16px;}
 .monitored-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:14px;}
 
 /* OVERLAY SCREENS */
@@ -281,6 +312,7 @@ h1,h2,h3,.brand{font-family:'Syne',sans-serif;}
 ::-webkit-scrollbar{width:4px;}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
 </style>
+  <script src="https://js.paystack.co/v1/inline.js"></script>
 </head>
 <body>
 
@@ -349,6 +381,7 @@ h1,h2,h3,.brand{font-family:'Syne',sans-serif;}
   <div class="topbar">
     <div class="brand">Awa School</div>
     <div class="topbar-actions">
+      <button class="icon-btn" style="position:relative;" onclick="openNotifications()" id="notif-btn">🔔<span id="notif-badge" class="notif-badge" style="display:none">0</span></button>
       <button class="icon-btn" onclick="toggleDark()" id="dark-btn">🌙</button>
       <button class="icon-btn" onclick="goTab('profile')">👤</button>
     </div>
@@ -431,6 +464,22 @@ h1,h2,h3,.brand{font-family:'Syne',sans-serif;}
       <div class="section-title">👀 Students You Monitor</div>
       <div id="monitor-list"></div>
     </div>
+    <div id="premium-upgrade-section">
+      <div class="section-title mt-16">⭐ Premium</div>
+      <div class="premium-card" id="premium-profile-card">
+        <h3>⭐ Go Premium</h3>
+        <p>One-time payment — access everything until after your JAMB exam</p>
+        <div class="premium-price">₦2,000 <span>one-time</span></div>
+        <ul class="premium-features">
+          <li>✅ Ask unlimited topic & question queries</li>
+          <li>✅ Priority replies from admin</li>
+          <li>✅ Full mock exam mode</li>
+          <li>✅ Detailed performance analytics</li>
+          <li>✅ All subjects & topics unlocked</li>
+        </ul>
+        <button class="btn-premium" onclick="initPaystack()">Get Full Access 🚀</button>
+      </div>
+    </div>
     <div class="section-title mt-16">Settings</div>
     <div class="setting-item"><div class="si-left"><span>🌙</span> Dark Mode</div><div class="toggle on" id="dark-toggle" onclick="toggleDark()"></div></div>
     <div class="setting-item"><div class="si-left"><span>🔔</span> Daily Reminders</div><div class="toggle on" id="remind-toggle" onclick="document.getElementById('remind-toggle').classList.toggle('on')"></div></div>
@@ -441,6 +490,7 @@ h1,h2,h3,.brand{font-family:'Syne',sans-serif;}
   <div id="tab-admin" class="tab-content content" style="display:none">
     <div class="page-title">⚙️ Admin Panel</div>
     <div class="page-sub">Manage student queries and replies</div>
+    <button class="btn-primary" style="margin-bottom:16px;" onclick="openAnalytics()">📊 View Student Analytics</button>
     <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
       <button class="qfilter-btn active" id="filter-all" onclick="filterQueries('all')">All</button>
       <button class="qfilter-btn" id="filter-pending" onclick="filterQueries('pending')">⏳ Pending</button>
@@ -1646,6 +1696,8 @@ function bootApp(){
     document.getElementById('nav-admin').style.display='flex';
   }
   updateStats();loadProfile();loadLB();loadBM();loadProgress();
+  loadNotifications();
+  initPushNotifications();
 }
 
 function updateStats(){
@@ -1951,6 +2003,14 @@ async function loadProfile(){
   document.getElementById('prof-name').textContent=UD.name;
   const rL={student:'🎓 UTME Candidate',parent:'👨‍👩‍👧 Parent',sibling:'👦 Sibling',mentor:'🧑‍🏫 Mentor/Teacher',guardian:'🛡️ Guardian',admin:'⚙️ Admin'};
   document.getElementById('prof-role').textContent=rL[UD.role]||'Student';
+  // Premium badge
+  const premSec = document.getElementById('premium-upgrade-section');
+  if(premSec){
+    if(UD.role==='admin'){ premSec.style.display='none'; }
+    else if(UD.isPremium){
+      premSec.innerHTML='<div class="section-title mt-16">⭐ Premium</div><div class="section-card" style="text-align:center;padding:16px;"><div class="premium-badge">⭐ Premium Member</div><p style="font-size:13px;color:var(--muted);margin-top:8px;">Thank you for supporting Awa School!</p></div>';
+    }
+  }
   updateStats();
   if(UD.role==='student'){
     document.getElementById('prof-code-section').style.display='block';
@@ -2013,8 +2073,8 @@ window.setQType = (type) => {
 };
 
 window.submitAsk = async () => {
-  // isPremium gate — ready for future use
-  // if(!UD?.isPremium){ toast('This feature is for premium subscribers only 🔒'); return; }
+  // isPremium gate — uncomment below to restrict to premium only
+  // if(!UD?.isPremium){ toast('This feature is for Premium subscribers only 🔒\nSubscribe from your Profile tab ⭐'); return; }
   const text = document.getElementById('ask-input').value.trim();
   if (!text) { toast('Please type your question first'); return; }
   if (text.length > 500) { toast('Query too long — max 500 characters'); return; }
@@ -2161,10 +2221,276 @@ window.editReply = async (queryId) => {
   }
 };
 
+
+// ── NOTIFICATIONS ─────────────────────────────────────────────
+async function loadNotifications() {
+  if(!UD || UD.role === 'admin') return;
+  try {
+    const snap = await getDocs(collection(db, 'queries'));
+    let unread = 0;
+    let notifs = [];
+    snap.forEach(d => {
+      const q = d.data();
+      if(q.uid === CU.uid && q.reply) {
+        const isRead = (UD.readNotifs || []).includes(d.id);
+        if(!isRead) unread++;
+        notifs.push({id: d.id, ...q, isRead});
+      }
+    });
+    notifs.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+    // Update badge
+    const badge = document.getElementById('notif-badge');
+    if(unread > 0) {
+      badge.textContent = unread;
+      badge.style.display = 'flex';
+    } else {
+      badge.style.display = 'none';
+    }
+    // Store for overlay
+    window._notifs = notifs;
+  } catch(e) { console.log('notif error', e); }
+}
+
+window.openNotifications = async () => {
+  await loadNotifications();
+  const list = document.getElementById('notif-list');
+  const notifs = window._notifs || [];
+  if(!notifs.length) {
+    list.innerHTML = '<div class="empty-state"><div class="es-icon">🔔</div><p>No notifications yet.<br>Replies from admin will appear here.</p></div>';
+  } else {
+    list.innerHTML = notifs.map(n => `
+      <div class="notif-item ${n.isRead ? 'read' : 'unread'}" onclick="markRead('${n.id}')">
+        <div class="notif-item-title">${n.isRead ? '' : '🟢 '} Admin replied to your query</div>
+        <div class="notif-item-body">Your query: "${n.text.substring(0,60)}${n.text.length>60?'...':''}"<br><strong style="color:var(--accent)">Reply: ${n.reply}</strong></div>
+        <div class="notif-item-time">${n.subject} · ${n.topic} · ${new Date(n.createdAt).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}</div>
+      </div>`).join('');
+  }
+  openOverlay('notif-overlay');
+};
+
+window.markRead = async (queryId) => {
+  const readNotifs = UD.readNotifs || [];
+  if(readNotifs.includes(queryId)) return;
+  readNotifs.push(queryId);
+  UD.readNotifs = readNotifs;
+  await saveUD();
+  document.querySelector(`[onclick="markRead('${queryId}')"]`)?.classList.replace('unread','read');
+  await loadNotifications();
+};
+
+window.markAllRead = async () => {
+  const notifs = window._notifs || [];
+  const readNotifs = [...new Set([...(UD.readNotifs||[]), ...notifs.map(n=>n.id)])];
+  UD.readNotifs = readNotifs;
+  await saveUD();
+  await loadNotifications();
+  openNotifications();
+};
+
+// Hook: mark notification when admin sends reply
+const _origSendReply = window.sendReply;
+window.sendReply = async (queryId) => {
+  await _origSendReply(queryId);
+  // notification is auto-created since student checks replies on load
+};
+
+// ── STUDENT ANALYTICS (admin) ───────────────────────────────
+window.openAnalytics = async () => {
+  const sel = document.getElementById('analytics-student-select');
+  sel.innerHTML = '<option value="">Select a student...</option>';
+  document.getElementById('analytics-content').innerHTML = '<div class="empty-state"><div class="es-icon">⏳</div><p>Loading students...</p></div>';
+  openOverlay('analytics-overlay');
+  try {
+    const snap = await getDocs(collection(db, 'users'));
+    snap.forEach(d => {
+      const u = d.data();
+      if(u.role === 'student') {
+        const opt = document.createElement('option');
+        opt.value = d.id;
+        opt.textContent = `${u.name} (${u.email})`;
+        sel.appendChild(opt);
+      }
+    });
+    document.getElementById('analytics-content').innerHTML = '<div class="empty-state"><div class="es-icon">📊</div><p>Select a student above</p></div>';
+  } catch(e) {
+    document.getElementById('analytics-content').innerHTML = '<div class="empty-state"><div class="es-icon">⚠️</div><p>Failed to load students</p></div>';
+  }
+};
+
+window.loadStudentAnalytics = async (uid) => {
+  if(!uid) return;
+  const el = document.getElementById('analytics-content');
+  el.innerHTML = '<div class="empty-state"><div class="es-icon">⏳</div><p>Loading...</p></div>';
+  try {
+    const uSnap = await getDoc(doc(db, 'users', uid));
+    const u = uSnap.data();
+    const avg = u.quizzes > 0 ? Math.round(u.totalScore / u.quizzes) : 0;
+    const tp = u.topicProgress || {};
+    // Build subject breakdown
+    let subjectRows = '';
+    const subjects = ['English','Biology','Chemistry','Physics'];
+    subjects.forEach(subj => {
+      const subjData = tp[subj] || {};
+      const attempts = Object.values(subjData);
+      if(!attempts.length) return;
+      const subjAvg = Math.round(attempts.reduce((a,b) => a + (b.avg||0), 0) / attempts.length);
+      const fillClass = subjAvg >= 70 ? '' : subjAvg >= 50 ? 'warn' : 'danger';
+      subjectRows += `
+        <div class="perf-bar-wrap">
+          <div class="perf-bar-label"><span>${subj}</span><span>${subjAvg}%</span></div>
+          <div class="perf-bar"><div class="perf-bar-fill ${fillClass}" style="width:${subjAvg}%"></div></div>
+        </div>`;
+    });
+    // Query history
+    const qSnap = await getDocs(collection(db, 'queries'));
+    let queryCount = 0, pendingCount = 0;
+    qSnap.forEach(d => {
+      const q = d.data();
+      if(q.uid === uid) { queryCount++; if(q.status==='pending') pendingCount++; }
+    });
+    el.innerHTML = `
+      <div class="analytics-card">
+        <h4>👤 ${u.name}</h4>
+        <div class="stat-row"><span>Total Quizzes</span><span class="stat-val">${u.quizzes || 0}</span></div>
+        <div class="stat-row"><span>Average Score</span><span class="stat-val">${avg}%</span></div>
+        <div class="stat-row"><span>Current Streak</span><span class="stat-val">${u.streak || 0} 🔥</span></div>
+        <div class="stat-row"><span>Joined</span><span class="stat-val">${new Date(u.createdAt).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}</span></div>
+        <div class="stat-row"><span>Premium</span><span class="stat-val">${u.isPremium ? '⭐ Yes' : '❌ No'}</span></div>
+      </div>
+      ${subjectRows ? `<div class="analytics-card"><h4>📚 Subject Performance</h4>${subjectRows}</div>` : ''}
+      <div class="analytics-card">
+        <h4>💬 Query History</h4>
+        <div class="stat-row"><span>Total Queries Sent</span><span class="stat-val">${queryCount}</span></div>
+        <div class="stat-row"><span>Awaiting Reply</span><span class="stat-val">${pendingCount}</span></div>
+        <div class="stat-row"><span>Replied</span><span class="stat-val">${queryCount - pendingCount}</span></div>
+      </div>
+      <button class="btn-primary" onclick="grantPremium('${uid}','${u.name}')">⭐ ${u.isPremium ? 'Revoke Premium' : 'Grant Premium'}</button>`;
+  } catch(e) {
+    el.innerHTML = '<div class="empty-state"><div class="es-icon">⚠️</div><p>Failed to load analytics</p></div>';
+  }
+};
+
+window.grantPremium = async (uid, name) => {
+  const uSnap = await getDoc(doc(db, 'users', uid));
+  const u = uSnap.data();
+  const newVal = !u.isPremium;
+  try {
+    loading(true);
+    await updateDoc(doc(db, 'users', uid), { isPremium: newVal });
+    loading(false);
+    toast(`${name} is now ${newVal ? '⭐ Premium' : 'Standard'}`);
+    loadStudentAnalytics(uid);
+  } catch(e) { loading(false); toast('Failed. Try again.'); }
+};
+
+// ── PAYSTACK PREMIUM ──────────────────────────────────────────
+window.initPaystack = () => {
+  if(UD.isPremium){ toast('You are already a Premium member! ⭐'); return; }
+  const handler = PaystackPop.setup({
+    key: 'pk_live_27e66900912d34f8c0f0e623c3a2aaaa183c9ea7',
+    email: CU.email,
+    amount: 200000, // ₦2,000 in kobo (one-time)
+    currency: 'NGN',
+    ref: 'AWA_' + CU.uid + '_' + Date.now(),
+    metadata: { uid: CU.uid, name: UD.name },
+    callback: async (response) => {
+      // One-time payment successful
+      try {
+        loading(true);
+        await updateDoc(doc(db, 'users', CU.uid), {
+          isPremium: true,
+          premiumSince: new Date().toISOString(),
+          paystackRef: response.reference
+        });
+        UD.isPremium = true;
+        loading(false);
+        toast('🎉 Full access unlocked! Good luck in your JAMB! 🇳🇬');
+        loadProfile();
+        // Uncomment the query gate in submitAsk
+      } catch(e) { loading(false); toast('Payment received but activation failed. Contact admin.'); }
+    },
+    onClose: () => { toast('Payment cancelled.'); }
+  });
+  handler.openIframe();
+};
+
+// ── PUSH NOTIFICATIONS (browser) ─────────────────────────────
+async function initPushNotifications() {
+  if(!('Notification' in window) || !('serviceWorker' in navigator)) return;
+  const remind = localStorage.getItem('sg_reminders') !== 'off';
+  if(!remind) return;
+  if(Notification.permission === 'default') {
+    const perm = await Notification.requestPermission();
+    if(perm !== 'granted') return;
+  }
+  if(Notification.permission === 'granted') {
+    scheduleDailyReminder();
+  }
+}
+
+function scheduleDailyReminder() {
+  const lastRemind = localStorage.getItem('sg_last_remind');
+  const today = new Date().toDateString();
+  if(lastRemind === today) return;
+  const now = new Date();
+  const target = new Date();
+  target.setHours(18, 0, 0, 0); // 6PM daily reminder
+  let delay = target - now;
+  if(delay < 0) delay += 24 * 60 * 60 * 1000;
+  setTimeout(() => {
+    new Notification('📚 Awa School', {
+      body: `Hey ${UD?.name?.split(' ')[0] || 'there'}! Time for your daily JAMB practice 🇳🇬`,
+      icon: '/studygee/icon-192.png'
+    });
+    localStorage.setItem('sg_last_remind', today);
+  }, delay);
+}
+
+// Wire reminders toggle to actually save preference
+document.getElementById('remind-toggle').onclick = function() {
+  this.classList.toggle('on');
+  const isOn = this.classList.contains('on');
+  localStorage.setItem('sg_reminders', isOn ? 'on' : 'off');
+  if(isOn) initPushNotifications();
+  toast(isOn ? 'Reminders on 🔔' : 'Reminders off');
+};
+
 function loading(show){document.getElementById('loading-overlay').style.display=show?'flex':'none';}
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
 window.toast=toast;
 </script>
+
+<!-- NOTIFICATIONS OVERLAY -->
+<div id="notif-overlay" class="overlay">
+  <div class="overlay-header">
+    <button class="icon-btn" onclick="closeOverlay('notif-overlay')">←</button>
+    <div>
+      <div class="overlay-title">🔔 Notifications</div>
+      <div class="overlay-sub">Replies and updates from admin</div>
+    </div>
+    <button class="icon-btn" style="margin-left:auto;font-size:12px;color:var(--muted);" onclick="markAllRead()">Mark all read</button>
+  </div>
+  <div class="overlay-body">
+    <div id="notif-list"><div class="empty-state"><div class="es-icon">🔔</div><p>No notifications yet</p></div></div>
+  </div>
+</div>
+
+<!-- ANALYTICS OVERLAY (admin) -->
+<div id="analytics-overlay" class="overlay">
+  <div class="overlay-header">
+    <button class="icon-btn" onclick="closeOverlay('analytics-overlay')">←</button>
+    <div>
+      <div class="overlay-title">📊 Student Analytics</div>
+      <div class="overlay-sub">Performance overview</div>
+    </div>
+  </div>
+  <div class="overlay-body">
+    <select class="student-select" id="analytics-student-select" onchange="loadStudentAnalytics(this.value)">
+      <option value="">Select a student...</option>
+    </select>
+    <div id="analytics-content"><div class="empty-state"><div class="es-icon">📊</div><p>Select a student to view their analytics</p></div></div>
+  </div>
+</div>
 
 <!-- ASK OVERLAY -->
 <div id="ask-overlay" class="overlay">
