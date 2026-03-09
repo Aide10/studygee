@@ -1642,6 +1642,9 @@ function bootApp(){
   const q=QUOTES[new Date().getDay()%QUOTES.length];
   document.getElementById('daily-quote').textContent=q.q;
   document.getElementById('quote-author').textContent='— '+q.a;
+  if(UD&&UD.role==='admin'){
+    document.getElementById('nav-admin').style.display='flex';
+  }
   updateStats();loadProfile();loadLB();loadBM();loadProgress();
 }
 
@@ -1884,10 +1887,6 @@ window.exitQuiz=()=>{
   document.getElementById('quiz-screen').classList.remove('open');
   document.getElementById('result-screen').classList.remove('open');
   goTab('home');
-  if(UD&&UD.role==='admin'){
-    document.getElementById('nav-admin').style.display='flex';
-    document.getElementById('tab-admin').style.display='none'; // shown by goTab
-  }
 };
 
 // ── BOOKMARKS ─────────────────────────────────────────
